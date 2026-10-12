@@ -1,0 +1,17 @@
+# None of these move money. The parser should recognize them and ignore them,
+# not store them as unparsed.
+
+# Balance check: has a transaction code and "Confirmed.", but it's not a transaction.
+UJ4X5Y6Z7A Confirmed. Your account balance was: M-PESA Account : Ksh54,000.00 on 5/10/26 at 11:48 PM. Transaction cost, Ksh0.00. Buy & sell NSE shares NOW with ZIIDI Trader on https://saf.cx/xxxxx
+# Failures.
+Failed. Not enough money in your M-PESA account to send M-PESA Ratiba of Ksh2,000.00. You must be able to pay the transaction fee as well as the requested amount. Your M-PESA balance is . MiniApp link https://bit.ly/xxxxx.
+Failed. The till number entered is incorrect. Kindly enter the correct Till Number and try again.
+Failed, the business number entered is incorrect. Kindly enter the correct business number and try again.
+Failed. Insufficient funds in your M-PESA account as well as Fuliza M-PESA to send KSH200,000.00. Your M-PESA balance KSH50.00. Available Fuliza M-PESA limit KSH2000.00.
+Phone number +0700000006 cannot receive AirTime credit either because it is too new, it is not a Safaricom PrePay line or has expired.
+# Busy.
+An MPESA transaction is currently underway. Please wait for this transaction to complete.
+M-PESA is unable to process your request because a similar transaction is currently underway. Please wait while we complete your initial request.
+# Ratiba (standing order) setup. The actual sends arrive later as normal SENT messages.
+Your Send Money M-PESA Ratiba Weekly of 2000 to 254700000007 - HELEN  AKINYI has been scheduled to run Weekly from 29/09/2025 5:44 PM until 01/09/2026 5:44 PM.
+Dear Customer, you have already setup a similar M-PESA Ratiba. Please confirm again.

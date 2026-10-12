@@ -1,0 +1,10 @@
+# Person to person. The sender always sees the full phone number. Double space inside the name.
+TL1A2B3C4D Confirmed. Ksh1,100.00 sent to ALICE  MWANGI 0700000001 on 4/12/25 at 8:07 AM. New M-PESA balance is Ksh25,000.00. Transaction cost, Ksh23.00.  Amount you can transact within the day is 498,900.00. Earn interest daily on Ziidi MMF,Dial *334#
+# Mixed-case name.
+TJ2B3C4D5E Confirmed. Ksh3,000.00 sent to Brian  otieno 0700000002 on 2/10/25 at 10:35 PM. New M-PESA balance is Ksh43,000.00. Transaction cost, Ksh53.00.  Amount you can transact within the day is 497,000.00. Earn interest daily on Ziidi MMF,Dial *334#
+# 2026 format, different promotional tail with a link.
+UJ3C4D5E6F Confirmed. Ksh3,000.00 sent to CAROL  KIPROP 0700000003 on 5/10/26 at 11:47 PM. New M-PESA balance is Ksh54,000.00. Transaction cost, Ksh53.00.  Amount you can transact within the day is 497,000.00. See all your balances now https://saf.cx/xxxxx
+# Pochi la Biashara: sent to a name with no phone number. Single space before "Amount".
+TH4D5E6F7G Confirmed. Ksh500.00 sent to DAVID  KAMAU on 9/8/25 at 7:27 PM. New M-PESA balance is Ksh22,000.00. Transaction cost, Ksh7.00. Amount you can transact within the day is 496,500.00. Sign up for Lipa Na M-PESA Till online https://m-pesaforbusiness.co.ke
+# Pochi la Biashara with zero transaction cost.
+TH5E6F7G8H Confirmed. Ksh20.00 sent to ESTHER  NJERI on 13/8/25 at 7:13 PM. New M-PESA balance is Ksh2,600.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 495,138.00. Sign up for Lipa Na M-PESA Till online https://m-pesaforbusiness.co.ke

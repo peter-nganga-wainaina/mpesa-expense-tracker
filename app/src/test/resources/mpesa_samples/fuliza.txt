@@ -1,0 +1,5 @@
+# Fuliza drawdown: an overdraft that covers a payment (the payment has its own message).
+# Note the space in "Ksh 948.44", a date with no time, and a two-digit day/month "29/09/25".
+TG2V3W4X5Y Confirmed. Fuliza M-PESA amount is Ksh 948.44. Access Fee charged Ksh 9.49. Total Fuliza M-PESA outstanding amount is Ksh 957.93 due on 29/09/25. To check daily charges, Dial *334#OK Select Fuliza M-PESA to Query Charges.
+# Fuliza repayment: double space after the code, and no date at all.
+TG3W4X5Y6Z  Confirmed. Ksh 957.93 from your M-PESA has been used to fully pay your outstanding Fuliza M-PESA. Available Fuliza M-PESA limit is Ksh 2000.00. M-PESA balance is Ksh50.00.

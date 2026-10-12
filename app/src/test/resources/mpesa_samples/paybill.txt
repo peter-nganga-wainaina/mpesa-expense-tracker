@@ -1,0 +1,7 @@
+# Paybill also says "sent to", so it must be matched before SENT. "for account" is the difference.
+# No period after the time, and no space in "Ksh5.00.Amount".
+TH6F7G8H9J Confirmed. Ksh200.00 sent to KPLC PREPAID for account 10000000001 on 4/8/25 at 7:30 PM New M-PESA balance is Ksh20,000.00. Transaction cost, Ksh5.00.Amount you can transact within the day is 499,240.00. Save frequent paybills for quick payment on M-PESA app https://bit.ly/mpesalnk
+# Alphanumeric account number, five-figure amount.
+TI7G8H9J1K Confirmed. Ksh50,000.00 sent to ACME CAPITAL LTD for account 123456AB on 9/9/25 at 8:43 AM New M-PESA balance is Ksh13,000.00. Transaction cost, Ksh108.00.Amount you can transact within the day is 450,000.00. Save frequent paybills for quick payment on M-PESA app https://bit.ly/mpesalnk
+# Mixed-case business name.
+TG8H9J1K2L Confirmed. Ksh30,000.00 sent to Sample Bank Paybill AC for account 7000001 on 16/7/25 at 11:28 AM New M-PESA balance is Ksh18,000.00. Transaction cost, Ksh72.00.Amount you can transact within the day is 470,000.00. Save frequent paybills for quick payment on M-PESA app https://bit.ly/mpesalnk

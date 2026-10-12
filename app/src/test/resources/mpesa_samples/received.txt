@@ -1,0 +1,8 @@
+# From a person, 2025: full phone number, no space in "Confirmed.You", double space before "New".
+TG4N5P6Q7R Confirmed.You have received Ksh1,000.00 from FRANK  OCHIENG 0700000004 on 22/7/25 at 10:04 PM  New M-PESA balance is Ksh28,000.00. Earn interest daily on Ziidi MMF,Dial *334#
+# From a person, 2026: the sender's phone number is masked.
+UJ5P6Q7R8S Confirmed.You have received Ksh3,000.00 from CAROL  KIPROP 0700***003 on 6/10/26 at 3:58 PM  New M-PESA balance is Ksh57,000.00. Invest & earn daily interest with ZIIDI on https://saf.cx/xxxxx
+# From a business (money market fund withdrawal): no phone number, and no "at" before the time.
+TH6Q7R8S9T Confirmed.You have received Ksh8,000.00 from ZIIDI on 8/8/25 5:06 PM. New M-PESA balance is Ksh14,000.00.  Separate personal and business funds through Pochi la Biashara on *334#.
+# International remittance: lowercase "confirmed.", "in <country> via <service>", no promotional tail.
+TL7R8S9T1U confirmed. You have received Ksh39,383.00 from GRACE WANJIRU KAMAU in US via WORLDREMIT on 8/12/25 at 3:25 AM. New M-PESA balance is Ksh66,000.00.

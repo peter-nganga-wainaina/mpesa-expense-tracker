@@ -1,0 +1,2 @@
+# Agent withdrawal: the date comes first, "AMWithdraw" has no space, and the agent is "<number> - <name>".
+TH8S9T1U2V Confirmed.on 5/8/25 at 8:37 AMWithdraw Ksh400.00 from 100001 - SAMPLE AGENT SHOP MAIN RD New M-PESA balance is Ksh19,000.00. Transaction cost, Ksh29.00. Amount you can transact within the day is 495,100.00. Sign up for Lipa Na M-PESA Till online https://m-pesaforbusiness.co.ke

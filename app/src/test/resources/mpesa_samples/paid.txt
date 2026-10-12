@@ -1,0 +1,8 @@
+# Buy goods / till. The merchant name ends with a period before " on", and there is no space in "PM.New".
+TF9J1K2L3M Confirmed. Ksh500.00 paid to SUNRISE CAFE WESTGATE. on 27/6/25 at 11:00 PM.New M-PESA balance is Ksh9,000.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 494,581.00. Save frequent Tills for quick payment on M-PESA app https://bit.ly/mpesalnk
+# Merchant name containing a digit; amount without thousands separator.
+TE1K2L3M4N Confirmed. Ksh587.00 paid to CORNER SHOP 1. on 29/5/25 at 12:42 PM.New M-PESA balance is Ksh22,000.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 495,563.00. Save frequent Tills for quick payment on M-PESA app https://bit.ly/mpesalnk
+# Mixed-case merchant name.
+TG2L3M4N5P Confirmed. Ksh2,200.00 paid to Lakeview Resort Limited. on 22/7/25 at 6:17 PM.New M-PESA balance is Ksh32,000.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 478,800.00. Save frequent Tills for quick payment on M-PESA app https://bit.ly/mpesalnk
+# 2026 format: the promotional tail is cut off and ends with a trailing space.
+UJ3M4N5P6Q Confirmed. Ksh3,300.00 paid to SWEET BAKES VENTURES. on 6/10/26 at 7:17 PM.New M-PESA balance is Ksh54,000.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 496,700.00. See all your balances now

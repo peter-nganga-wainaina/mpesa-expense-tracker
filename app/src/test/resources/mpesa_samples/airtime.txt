@@ -1,0 +1,4 @@
+# Airtime for yourself: lowercase "confirmed.You", no space in "AM.New".
+TH9T1U2V3W confirmed.You bought Ksh100.00 of airtime on 14/8/25 at 11:38 AM.New M-PESA balance is Ksh3,000.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 495,620.00. Start Investing today with Ziidi MMF & earn daily. Dial *334#.
+# Airtime for another number: "for <phone>", and "New  balance" (no "M-PESA", double space).
+TH1U2V3W4X confirmed.You bought Ksh500.00 of airtime for 0700000005 on 3/8/25 at 10:49 AM.New  balance is Ksh29,000.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 499,500.00.You can now access M-PESA via *334#
