@@ -14,6 +14,7 @@ viable.
 
 ## Dev machine constraints
 - MacBook with 8 GB RAM, which is tight with Android Studio open. Follow these rules:
+  - The `Makefile` wraps the allowed Gradle tasks (`make help` lists them); keep it in sync.
   - Run the narrowest Gradle task that answers the question. For the parser, use
     `./gradlew :app:testDebugUnitTest --tests "*MpesaParser*"`, not `./gradlew build` or `check`.
   - Never run `assembleRelease`, `lint`, or `connectedAndroidTest` unless asked.
@@ -37,6 +38,7 @@ sms/MpesaParser.kt               // SMS body -> Transaction (pure Kotlin, no And
 sms/TransactionIngest.kt         // parse, dedupe by code, save, notify (shared by receiver and backfill)
 sms/InboxBackfill.kt             // scans SMS inbox for missed M-Pesa messages
 data/                            // Room: TransactionEntity, Category, MerchantMemory, UnparsedMessage
+suggest/CategorySuggester.kt     // interface: transaction -> ranked category suggestions
 notify/CategoryPrompt.kt         // notification with category action buttons
 notify/CategoryActionReceiver.kt // handles button taps
 sync/SheetSyncWorker.kt          // pushes categorized rows to the Google Sheet
@@ -52,11 +54,16 @@ ui/                              // uncategorized queue, category picker, settin
 - **Sender ID is exactly `MPESA`** (confirmed from 681 real messages). Keep it in one constant.
 - **Message types:** PAID (till), PAYBILL, SENT, WITHDRAW, AIRTIME, RECEIVED, plus Fuliza and others.
   Rule order matters: check paybill ("for account") before plain send.
-- **Parser has three outcomes:** a transaction, an ignorable notice (failures, balance checks,
-  Ratiba setup, "transaction underway"), or unparsed. Only the last goes to `UnparsedMessage`.
+- **Parser has three outcomes**, keyed on the transaction code (every money movement has one):
+  no code, or a balance check → Ignored. Code + amount → a transaction (UNKNOWN type if no keyword
+  matches). Code but no readable amount → Unrecognized, which goes to `UnparsedMessage`.
+- **Fields are found by landmarks**, not whole-sentence templates: each field is the first value of
+  its shape, or the text between a keyword and the next landmark.
 - **Wording is inconsistent**, so match loosely: `Confirmed`/`confirmed`, missing or doubled spaces,
   a trailing period on names, `Ksh 948.44` vs `Ksh948.44`, `on d/M/yy at h:mm AM` vs no "at".
   Anchor on the stable pieces and ignore the promotional tail. See `mpesa_samples/`.
+- **Ratiba (standing order) payments** start "Confirmed M-PESA Ratiba." and mask the recipient's
+  name and number (`HELEN A*****`). They are SENT transactions, not notices.
 - **Phone numbers are optional and opaque.** Since 2026, received-money messages mask the sender's
   number (`0700***003`). Pochi la Biashara sends have no number at all.
 - **Transaction cost is stored separately** from the amount, for tracking.
@@ -68,6 +75,11 @@ ui/                              // uncategorized queue, category picker, settin
   MerchantMemory is keyed by counterparty name, not phone number, because numbers can be masked.
   "Other…" opens a dialog-themed activity with the full grid and "add new category".
   Android blocks background activity launches, so never pop a screen directly.
+- **Smart picks come from a `CategorySuggester` interface**, so sources can be added without
+  touching the notification code. The first implementation chains MerchantMemory, then most-used
+  categories. A model-based suggester (on-device first, because this is financial data) may be added
+  later for merchants with no history. It only suggests, never auto-assigns, and never blocks the
+  notification on a network call.
 - **Backfill** runs on app open and daily. On first install, look back about 30 days. Backfilled
   items go to the uncategorized queue without individual notifications.
 - **Sheet sync:** only categorized rows, retried with a network constraint. Handle re-categorization
@@ -80,9 +92,24 @@ ui/                              // uncategorized queue, category picker, settin
 1. `MpesaParser` plus unit tests from real M-Pesa message samples  <- START HERE
 2. Receiver, ingest, and a basic notification, then sideload to a test device
 3. Room, the uncategorized queue screen, and the category picker
-4. Merchant memory and smart picks
+4. Merchant memory and smart picks, behind the `CategorySuggester` interface
 5. Google Sheet sync (Apps Script plus WorkManager)
 6. Inbox backfill and the first-run setup flow
+
+## Future features
+- **User-defined auto-categorization rules.** The user creates rules such as "counterparty is X
+  (optionally: and type is SENT/RECEIVED/...) → category Y". In `TransactionIngest`, after parsing
+  and saving: if a rule matches, assign its category and queue sync with no notification; otherwise
+  notify as usual. Rules are the user's own decisions, so this doesn't conflict with suggesters never
+  auto-assigning. Keep rule matching pure Kotlin (testable on the JVM), match on parsed fields rather
+  than raw message text, and let the user list, edit, and delete rules in settings. A natural entry
+  point is a "Always file this here" option when categorizing.
+  - First use case: Ziidi (M-Pesa money market fund) auto-saves a percentage of each payment as its
+    own coded message ("sent to ZIIDI"), which today parses as SENT and prompts like spending. Until
+    rules exist, the user files it under "Savings" and MerchantMemory remembers it. With rules:
+    ZIIDI + SENT → savings deposit, ZIIDI + RECEIVED → savings withdrawal. Match the counterparty,
+    not the word "Ziidi", since most messages carry a Ziidi promo tail, and confirm the real wording
+    first: "for account" would make it PAYBILL instead of SENT.
 
 ## Working agreements
 - Write tests alongside the parser and keep the parser free of Android imports.

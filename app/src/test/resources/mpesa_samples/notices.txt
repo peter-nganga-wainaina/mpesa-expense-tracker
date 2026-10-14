@@ -1,5 +1,5 @@
-# None of these move money. The parser should recognize them and ignore them,
-# not store them as unparsed.
+# None of these move money, so all are Ignored: most have no transaction code,
+# and the balance check is matched explicitly because it does have one.
 
 # Balance check: has a transaction code and "Confirmed.", but it's not a transaction.
 UJ4X5Y6Z7A Confirmed. Your account balance was: M-PESA Account : Ksh54,000.00 on 5/10/26 at 11:48 PM. Transaction cost, Ksh0.00. Buy & sell NSE shares NOW with ZIIDI Trader on https://saf.cx/xxxxx

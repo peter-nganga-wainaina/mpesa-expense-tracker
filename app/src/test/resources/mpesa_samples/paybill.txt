@@ -5,3 +5,7 @@ TH6F7G8H9J Confirmed. Ksh200.00 sent to KPLC PREPAID for account 10000000001 on 
 TI7G8H9J1K Confirmed. Ksh50,000.00 sent to ACME CAPITAL LTD for account 123456AB on 9/9/25 at 8:43 AM New M-PESA balance is Ksh13,000.00. Transaction cost, Ksh108.00.Amount you can transact within the day is 450,000.00. Save frequent paybills for quick payment on M-PESA app https://bit.ly/mpesalnk
 # Mixed-case business name.
 TG8H9J1K2L Confirmed. Ksh30,000.00 sent to Sample Bank Paybill AC for account 7000001 on 16/7/25 at 11:28 AM New M-PESA balance is Ksh18,000.00. Transaction cost, Ksh72.00.Amount you can transact within the day is 470,000.00. Save frequent paybills for quick payment on M-PESA app https://bit.ly/mpesalnk
+# Account "number" with spaces (data bundles use the product name as the account).
+TG7B8C9D1E Confirmed. Ksh20.00 sent to SAFARICOM DATA BUNDLES for account SAFARICOM DATA BUNDLES on 27/7/25 at 1:32 PM. New M-PESA balance is Ksh5,000.00. Transaction cost, Ksh0.00.
+# Account given as a person's name.
+TH8C9D1E2F Confirmed. Ksh1,500.00 sent to Sample Health Clinic for account Jane Doe on 11/8/25 at 11:09 AM New M-PESA balance is Ksh9,000.00. Transaction cost, Ksh20.00.Amount you can transact within the day is 498,500.00. Save frequent paybills for quick payment on M-PESA app https://bit.ly/mpesalnk
