@@ -2,15 +2,15 @@
 
 Android app that turns M-Pesa SMS confirmations into a categorized expense log. It parses each
 incoming M-Pesa message, prompts the user to categorize the transaction from a notification, and
-syncs categorized transactions to a Google Sheet.
+stores the categorized log on the device for tracking spending per category over time.
 
 Distributed as a sideloaded APK, not through Google Play, which is what makes the SMS permissions
 viable.
 
 ## Stack
 - Kotlin, Jetpack Compose (Empty Activity template), min SDK 26, Gradle Kotlin DSL
-- Room for local storage, WorkManager for background sync
-- Google Sheet sync through an Apps Script web app endpoint (POST JSON)
+- Room (SQLite) for local storage; the on-device database is the source of truth
+- Off-device sync or export is undecided (see Build order step 5)
 
 ## Dev machine constraints
 - MacBook with 8 GB RAM, which is tight with Android Studio open. Follow these rules:
@@ -41,7 +41,7 @@ data/                            // Room: TransactionEntity, Category, MerchantM
 suggest/CategorySuggester.kt     // interface: transaction -> ranked category suggestions
 notify/CategoryPrompt.kt         // notification with category action buttons
 notify/CategoryActionReceiver.kt // handles button taps
-sync/SheetSyncWorker.kt          // pushes categorized rows to the Google Sheet
+sync/                            // later: sync or export, target undecided
 ui/                              // uncategorized queue, category picker, settings, first-run setup
 ```
 
@@ -82,24 +82,26 @@ ui/                              // uncategorized queue, category picker, settin
   notification on a network call.
 - **Backfill** runs on app open and daily. On first install, look back about 30 days. Backfilled
   items go to the uncategorized queue without individual notifications.
-- **Sheet sync:** only categorized rows, retried with a network constraint. Handle re-categorization
-  by having Apps Script update the row matching the transaction code instead of appending a duplicate.
+- **Sync / export is undecided** (Google Sheet, a hosted database, or none). Whatever is chosen:
+  only categorized rows, retried in the background (WorkManager) with a network constraint, and
+  re-categorization updates the row matching the transaction code instead of adding a duplicate.
 - **Battery:** prompt with `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` on first run, and show
   instructions to add the app to Samsung's "Never sleeping apps".
 - **Manual add** button for cash and card spending.
 
 ## Build order
-1. `MpesaParser` plus unit tests from real M-Pesa message samples  <- START HERE
-2. Receiver, ingest, and a basic notification, then sideload to a test device
-3. Room, the uncategorized queue screen, and the category picker
+1. `MpesaParser` plus unit tests from real M-Pesa message samples  (done)
+2. Receiver, ingest, and a basic notification, tested on the emulator  (done)
+3. Room, the uncategorized queue screen, and the category picker  <- START HERE
 4. Merchant memory and smart picks, behind the `CategorySuggester` interface
-5. Google Sheet sync (Apps Script plus WorkManager)
+5. Spending insights: in-app views of spending per category per month, plus sync or export once
+   the target is chosen
 6. Inbox backfill and the first-run setup flow
 
 ## Future features
 - **User-defined auto-categorization rules.** The user creates rules such as "counterparty is X
   (optionally: and type is SENT/RECEIVED/...) → category Y". In `TransactionIngest`, after parsing
-  and saving: if a rule matches, assign its category and queue sync with no notification; otherwise
+  and saving: if a rule matches, assign its category with no notification; otherwise
   notify as usual. Rules are the user's own decisions, so this doesn't conflict with suggesters never
   auto-assigning. Keep rule matching pure Kotlin (testable on the JVM), match on parsed fields rather
   than raw message text, and let the user list, edit, and delete rules in settings. A natural entry
