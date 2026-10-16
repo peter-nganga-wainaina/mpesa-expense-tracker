@@ -10,6 +10,7 @@ viable.
 ## Stack
 - Kotlin, Jetpack Compose (Empty Activity template), min SDK 26, Gradle Kotlin DSL
 - Room (SQLite) for local storage; the on-device database is the source of truth
+- WorkManager for the daily inbox sweep
 - Off-device sync or export is undecided (see Build order step 5)
 
 ## Dev machine constraints
@@ -38,7 +39,8 @@ sms/MpesaSms.kt                  // sender filter + multipart join (pure Kotlin)
 sms/MpesaSmsReceiver.kt          // manifest-registered SMS_RECEIVED receiver, sender == "MPESA"
 sms/MpesaParser.kt               // SMS body -> Transaction (pure Kotlin, no Android deps)
 sms/TransactionIngest.kt         // parse, dedupe by code, save, notify (shared by receiver and backfill)
-sms/InboxBackfill.kt             // scans SMS inbox for missed M-Pesa messages
+sms/InboxBackfill.kt             // scans SMS inbox for missed M-Pesa messages (first import + sweep)
+sms/DailySweepWorker.kt          // WorkManager job running the sweep once a day
 data/                            // Room: transactions, categories, unparsed messages
 categorize/                      // Category, CategoryStore, Categorizer, new-name validation
 suggest/CategorySuggester.kt     // interface: transaction -> ranked category suggestions
@@ -90,8 +92,8 @@ ui/                              // uncategorized queue, category picker, settin
   notifications. Two uses:
   - **First import:** during first-run setup the user picks how far back to import: none, 7, 14,
     or 30 days. Default 14.
-  - **Sweeper:** a fixed, invisible look-back of a few days on app open (and later daily, via
-    WorkManager), catching anything the receiver missed. Overlap is harmless: codes dedupe.
+  - **Sweeper:** a fixed, invisible 3-day look-back on every app open and daily (WorkManager,
+    `DailySweepWorker`), catching anything the receiver missed. Overlap is harmless: codes dedupe.
 - **Sync / export is undecided** (Google Sheet, a hosted database, or none). Whatever is chosen:
   only categorized rows, retried in the background (WorkManager) with a network constraint, and
   re-categorization updates the row matching the transaction code instead of adding a duplicate.

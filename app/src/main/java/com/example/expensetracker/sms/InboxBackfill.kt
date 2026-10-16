@@ -10,8 +10,8 @@ fun interface MpesaInbox {
 
 /**
  * Brings M-Pesa messages the receiver never saw into the queue: the user's chosen history on first
- * run, and a short look-back on every app open to catch anything missed since. Re-reading messages
- * that are already saved is harmless, because transaction codes dedupe.
+ * run, and a short look-back on every app open and daily to catch anything missed since.
+ * Re-reading messages that are already saved is harmless, because transaction codes dedupe.
  */
 class InboxBackfill(
     private val inbox: MpesaInbox,

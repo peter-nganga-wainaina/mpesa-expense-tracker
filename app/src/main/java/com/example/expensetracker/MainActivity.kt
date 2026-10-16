@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
+import com.example.expensetracker.sms.DailySweepWorker
 import com.example.expensetracker.ui.QueueScreen
 import com.example.expensetracker.ui.SetupScreen
 import com.example.expensetracker.ui.theme.ExpenseTrackerTheme
@@ -37,16 +38,20 @@ class MainActivity : ComponentActivity() {
                     SetupScreen(container, onFinished = {
                         container.setup.markComplete()
                         setupComplete = true
+                        DailySweepWorker.schedule(this)
                     })
                 }
             }
         }
     }
 
-    // Each time the app comes to the front, catch any M-Pesa messages the receiver missed.
+    // Each time the app comes to the front, catch any M-Pesa messages the receiver missed, and make
+    // sure the daily sweep is scheduled for the days the app isn't opened.
     override fun onStart() {
         super.onStart()
-        if (setupComplete) lifecycleScope.launch { container.backfill.sweep() }
+        if (!setupComplete) return
+        lifecycleScope.launch { container.backfill.sweep() }
+        DailySweepWorker.schedule(this)
     }
 
     // singleTop: a notification tap while the app is open arrives here instead of stacking a new screen.
