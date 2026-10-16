@@ -5,7 +5,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -13,31 +12,49 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.expensetracker.MainActivity
 import com.example.expensetracker.R
+import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.TransactionNotifier
 
-/** Posts a notification asking the user to categorize a transaction. Category buttons come later. */
+/**
+ * Posts a notification asking the user to categorize a transaction: one button per quick pick, which
+ * files it without opening the app, plus "Other…" for the full picker.
+ */
 class CategoryPrompt(private val context: Context) : TransactionNotifier {
 
-    override fun promptForCategory(transaction: MpesaTransaction) {
-        // Without the permission (Android 13+) notify() is a no-op; the transaction will still reach
-        // the uncategorized queue once storage exists.
+    override fun promptForCategory(transaction: MpesaTransaction, quickPicks: List<Category>) {
+        // Without the permission (Android 13+) notify() is a no-op; the transaction still waits in the queue.
         if (!canPostNotifications()) return
         ensureChannel()
 
-        val openApp = PendingIntent.getActivity(
-            context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE,
-        )
+        val openPicker = openPicker(transaction.code)
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Categorize this transaction")
             .setContentText(describe(transaction))
-            .setContentIntent(openApp)
+            .setContentIntent(openPicker)
             .setAutoCancel(true)
+            .apply {
+                quickPicks.forEach { addAction(0, it.name, CategoryActionReceiver.intent(context, transaction.code, it.id)) }
+            }
+            .addAction(0, "Other…", openPicker)
             .build()
-        // Keyed by transaction code, so a repeated message replaces its notification instead of stacking.
-        NotificationManagerCompat.from(context).notify(transaction.code.hashCode(), notification)
+        NotificationManagerCompat.from(context).notify(notificationId(transaction.code), notification)
     }
+
+    override fun dismiss(transactionCode: String) =
+        NotificationManagerCompat.from(context).cancel(notificationId(transactionCode))
+
+    /** Activities may only be opened by a user's tap, so the picker is reached through the notification. */
+    private fun openPicker(transactionCode: String): PendingIntent = PendingIntent.getActivity(
+        context,
+        transactionCode.hashCode(),
+        MainActivity.pickerIntent(context, transactionCode),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+
+    // Keyed by transaction code, so the prompt can be found again to dismiss it.
+    private fun notificationId(transactionCode: String) = transactionCode.hashCode()
 
     private fun canPostNotifications(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||

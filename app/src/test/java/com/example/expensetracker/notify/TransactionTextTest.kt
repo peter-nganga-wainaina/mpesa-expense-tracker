@@ -7,6 +7,7 @@ import com.example.expensetracker.sms.MpesaTransactionType.PAYBILL
 import com.example.expensetracker.sms.MpesaTransactionType.RECEIVED
 import com.example.expensetracker.sms.MpesaTransactionType.SENT
 import com.example.expensetracker.sms.MpesaTransactionType.WITHDRAW
+import java.time.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -20,6 +21,12 @@ class TransactionTextTest {
         assertEquals("Ksh948.44", formatKsh(94844))
         assertEquals("Ksh0.05", formatKsh(5))
         assertEquals("Ksh1,234,567.00", formatKsh(123456700))
+    }
+
+    @Test
+    fun `shows when a transaction happened as day, month and 12-hour time`() {
+        assertEquals("13 Oct, 10:40 PM", formatOccurredAt(LocalDateTime.of(2026, 10, 13, 22, 40)))
+        assertEquals("4 Dec, 8:07 AM", formatOccurredAt(LocalDateTime.of(2025, 12, 4, 8, 7)))
     }
 
     @Test

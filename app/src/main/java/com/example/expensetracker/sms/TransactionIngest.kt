@@ -1,10 +1,13 @@
 package com.example.expensetracker.sms
 
+import com.example.expensetracker.categorize.Category
+import com.example.expensetracker.suggest.CategorySuggester
 import java.time.LocalDateTime
 
-/** Shows the user a newly parsed transaction so they can categorize it. */
-fun interface TransactionNotifier {
-    fun promptForCategory(transaction: MpesaTransaction)
+/** Prompts the user to categorize transactions, and withdraws prompts that are no longer needed. */
+interface TransactionNotifier {
+    fun promptForCategory(transaction: MpesaTransaction, quickPicks: List<Category>)
+    fun dismiss(transactionCode: String)
 }
 
 /** Where ingested messages are kept. The database is the source of truth; notifications are shortcuts. */
@@ -17,6 +20,8 @@ interface TransactionStore {
 
     /** Keeps a receipt the parser couldn't read, so it is never silently dropped. */
     suspend fun saveUnparsed(body: String, receivedAt: LocalDateTime)
+
+    suspend fun setCategory(transactionCode: String, categoryId: Long)
 }
 
 /**
@@ -25,15 +30,25 @@ interface TransactionStore {
  */
 class TransactionIngest(
     private val store: TransactionStore,
+    private val suggester: CategorySuggester,
     private val notifier: TransactionNotifier,
 ) {
     /** [receivedAt] is when the SMS arrived, used when the message itself carries no time. */
     suspend fun ingest(body: String, receivedAt: LocalDateTime) {
         when (val result = MpesaParser.parse(body)) {
-            is ParseResult.Parsed ->
-                if (store.insertIfNew(result.transaction, receivedAt)) notifier.promptForCategory(result.transaction)
+            is ParseResult.Parsed -> {
+                val transaction = result.transaction
+                if (store.insertIfNew(transaction, receivedAt)) {
+                    notifier.promptForCategory(transaction, suggester.suggest(transaction, QUICK_PICKS))
+                }
+            }
             ParseResult.Unrecognized -> store.saveUnparsed(body, receivedAt)
             ParseResult.Ignored -> Unit
         }
+    }
+
+    private companion object {
+        /** Android shows at most 3 notification actions: 2 quick picks plus "Other…". */
+        const val QUICK_PICKS = 2
     }
 }

@@ -17,12 +17,20 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET categoryId = :categoryId WHERE code = :code")
     suspend fun setCategory(code: String, categoryId: Long)
+
+    @Query("SELECT categoryId, COUNT(*) AS uses FROM transactions WHERE categoryId IS NOT NULL GROUP BY categoryId")
+    suspend fun categoryUses(): List<CategoryUse>
 }
+
+data class CategoryUse(val categoryId: Long, val uses: Int)
 
 @Dao
 interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY name")
     fun observeAll(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories ORDER BY id")
+    suspend fun getAll(): List<CategoryEntity>
 
     /** Returns the new ID, or -1 when a category with this name already exists. */
     @Insert(onConflict = OnConflictStrategy.IGNORE)

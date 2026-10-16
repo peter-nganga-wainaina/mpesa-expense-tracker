@@ -43,6 +43,18 @@ class TransactionEntityTest {
         assertTrue(stored == stored.sorted())
     }
 
+    @Test
+    fun `a stored transaction reads back unchanged`() {
+        val original = transaction(occurredAt = LocalDateTime.of(2025, 12, 4, 8, 7))
+
+        assertEquals(original, original.toEntity(receivedAt).toTransaction())
+    }
+
+    @Test
+    fun `a transaction stored without its own time reads back with the arrival time`() {
+        assertEquals(receivedAt, transaction(occurredAt = null).toEntity(receivedAt).toTransaction().occurredAt)
+    }
+
     private fun transaction(occurredAt: LocalDateTime? = null) = MpesaTransaction(
         code = "TL1A2B3C4D",
         type = SENT,

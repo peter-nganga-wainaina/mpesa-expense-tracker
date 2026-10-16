@@ -4,9 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import com.example.expensetracker.data.AppDatabase
-import com.example.expensetracker.data.RoomTransactionStore
-import com.example.expensetracker.notify.CategoryPrompt
+import com.example.expensetracker.AppContainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -27,11 +25,7 @@ class MpesaSmsReceiver : BroadcastReceiver() {
         val sms = mpesaSms(parts) ?: return
         val receivedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(sms.receivedAtMillis), ZoneId.systemDefault())
 
-        val app = context.applicationContext
-        val ingest = TransactionIngest(
-            store = RoomTransactionStore(AppDatabase.get(app)),
-            notifier = CategoryPrompt(app),
-        )
+        val ingest = AppContainer(context).ingest
         // goAsync keeps the process alive past onReceive while the work finishes off the main thread.
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {

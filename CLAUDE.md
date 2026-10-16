@@ -33,11 +33,14 @@ viable.
 
 ## Architecture
 ```
+AppContainer.kt                  // wires stores, ingest, and categorizer for receivers and UI
+sms/MpesaSms.kt                  // sender filter + multipart join (pure Kotlin)
 sms/MpesaSmsReceiver.kt          // manifest-registered SMS_RECEIVED receiver, sender == "MPESA"
 sms/MpesaParser.kt               // SMS body -> Transaction (pure Kotlin, no Android deps)
 sms/TransactionIngest.kt         // parse, dedupe by code, save, notify (shared by receiver and backfill)
 sms/InboxBackfill.kt             // scans SMS inbox for missed M-Pesa messages
 data/                            // Room: TransactionEntity, Category, MerchantMemory, UnparsedMessage
+categorize/                      // Category, CategoryStore, Categorizer, new-name validation
 suggest/CategorySuggester.kt     // interface: transaction -> ranked category suggestions
 notify/CategoryPrompt.kt         // notification with category action buttons
 notify/CategoryActionReceiver.kt // handles button taps

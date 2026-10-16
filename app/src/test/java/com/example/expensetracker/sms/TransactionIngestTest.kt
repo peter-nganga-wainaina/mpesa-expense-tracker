@@ -1,5 +1,8 @@
 package com.example.expensetracker.sms
 
+import com.example.expensetracker.categorize.Category
+import com.example.expensetracker.testing.FakeNotifier
+import com.example.expensetracker.testing.FakeTransactionStore
 import java.time.LocalDateTime
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -8,22 +11,10 @@ import org.junit.Test
 
 class TransactionIngestTest {
 
-    /** In-memory stand-in for the database, deduplicating by code like the real one. */
-    private class FakeStore : TransactionStore {
-        val saved = linkedMapOf<String, MpesaTransaction>()
-        val unparsed = mutableListOf<String>()
-
-        override suspend fun insertIfNew(transaction: MpesaTransaction, receivedAt: LocalDateTime): Boolean =
-            saved.putIfAbsent(transaction.code, transaction) == null
-
-        override suspend fun saveUnparsed(body: String, receivedAt: LocalDateTime) {
-            unparsed += body
-        }
-    }
-
-    private val store = FakeStore()
-    private val prompted = mutableListOf<MpesaTransaction>()
-    private val ingest = TransactionIngest(store = store, notifier = { prompted += it })
+    private val store = FakeTransactionStore()
+    private val notifier = FakeNotifier()
+    private val picks = listOf(Category(1, "Food"), Category(2, "Transport"))
+    private val ingest = TransactionIngest(store, suggester = { _, limit -> picks.take(limit) }, notifier = notifier)
 
     private fun ingest(body: String) = runBlocking { ingest.ingest(body, RECEIVED_AT) }
 
@@ -32,7 +23,14 @@ class TransactionIngestTest {
         ingest(SENT_MESSAGE)
 
         assertEquals(setOf("TL1A2B3C4D"), store.saved.keys)
-        assertEquals(listOf("TL1A2B3C4D"), prompted.map { it.code })
+        assertEquals(setOf("TL1A2B3C4D"), notifier.showing.keys)
+    }
+
+    @Test
+    fun `the prompt offers the suggested categories as quick picks`() {
+        ingest(SENT_MESSAGE)
+
+        assertEquals(picks, notifier.showing.getValue("TL1A2B3C4D").quickPicks)
     }
 
     @Test
@@ -41,7 +39,7 @@ class TransactionIngestTest {
         ingest(SENT_MESSAGE)
 
         assertEquals(1, store.saved.size)
-        assertEquals(1, prompted.size)
+        assertEquals(1, notifier.promptCount)
     }
 
     @Test
@@ -52,7 +50,7 @@ class TransactionIngestTest {
 
         assertEquals(listOf(body), store.unparsed)
         assertTrue(store.saved.isEmpty())
-        assertTrue(prompted.isEmpty())
+        assertEquals(0, notifier.promptCount)
     }
 
     @Test
@@ -61,7 +59,7 @@ class TransactionIngestTest {
 
         assertTrue(store.saved.isEmpty())
         assertTrue(store.unparsed.isEmpty())
-        assertTrue(prompted.isEmpty())
+        assertEquals(0, notifier.promptCount)
     }
 
     private companion object {
