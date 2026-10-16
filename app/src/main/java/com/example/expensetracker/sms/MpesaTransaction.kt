@@ -39,5 +39,5 @@ sealed interface ParseResult {
     data object Ignored : ParseResult
 
     /** Has a transaction code but no readable amount: a receipt in a format the parser can't read. */
-    data object Unrecognized : ParseResult
+    data class Unrecognized(val code: String) : ParseResult
 }

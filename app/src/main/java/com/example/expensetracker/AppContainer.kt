@@ -5,11 +5,15 @@ import com.example.expensetracker.categorize.Categorizer
 import com.example.expensetracker.data.AppDatabase
 import com.example.expensetracker.data.RoomCategoryStore
 import com.example.expensetracker.data.RoomTransactionStore
+import com.example.expensetracker.data.SetupState
 import com.example.expensetracker.notify.CategoryPrompt
+import com.example.expensetracker.sms.InboxBackfill
+import com.example.expensetracker.sms.SmsInbox
 import com.example.expensetracker.sms.TransactionIngest
 import com.example.expensetracker.suggest.ChainedSuggester
 import com.example.expensetracker.suggest.MerchantMemorySuggester
 import com.example.expensetracker.suggest.MostUsedSuggester
+import java.time.LocalDateTime
 
 /** Wires the app's pieces together in one place, for the receivers and the UI alike. Cheap to create. */
 class AppContainer(context: Context) {
@@ -24,4 +28,6 @@ class AppContainer(context: Context) {
 
     val ingest = TransactionIngest(transactions, suggester, notifier)
     val categorizer = Categorizer(transactions, notifier)
+    val backfill = InboxBackfill(SmsInbox(app), ingest, now = LocalDateTime::now)
+    val setup = SetupState(app)
 }

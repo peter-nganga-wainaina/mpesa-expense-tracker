@@ -85,8 +85,13 @@ ui/                              // uncategorized queue, category picker, settin
   categories. A model-based suggester (on-device first, because this is financial data) may be added
   later for merchants with no history. It only suggests, never auto-assigns, and never blocks the
   notification on a network call.
-- **Backfill** runs on app open and daily. On first install, look back about 30 days. Backfilled
-  items go to the uncategorized queue without individual notifications.
+- **Backfill** reads M-Pesa messages already in the SMS inbox (needs `READ_SMS`) and saves any
+  the database doesn't have yet. Backfilled items go to the uncategorized queue without
+  notifications. Two uses:
+  - **First import:** during first-run setup the user picks how far back to import: none, 7, 14,
+    or 30 days. Default 14.
+  - **Sweeper:** a fixed, invisible look-back of a few days on app open (and later daily, via
+    WorkManager), catching anything the receiver missed. Overlap is harmless: codes dedupe.
 - **Sync / export is undecided** (Google Sheet, a hosted database, or none). Whatever is chosen:
   only categorized rows, retried in the background (WorkManager) with a network constraint, and
   re-categorization updates the row matching the transaction code instead of adding a duplicate.
@@ -101,9 +106,11 @@ ui/                              // uncategorized queue, category picker, settin
 4. Merchant memory and smart picks, behind the `CategorySuggester` interface  (done)
 5. Spending insights: in-app views of spending per category per month, plus sync or export once
    the target is chosen
-6. Inbox backfill and the first-run setup flow
+6. First-run setup (permissions, first import, battery) and inbox backfill  <- START HERE
 
 ## Future features
+- **"Import older messages"** in settings: pull in history beyond the first import (e.g. up to 30
+  days or more) at any time. Reuses the backfill; duplicates are skipped by transaction code.
 - **User-defined auto-categorization rules.** The user creates rules such as "counterparty is X
   (optionally: and type is SENT/RECEIVED/...) → category Y". In `TransactionIngest`, after parsing
   and saving: if a rule matches, assign its category with no notification; otherwise

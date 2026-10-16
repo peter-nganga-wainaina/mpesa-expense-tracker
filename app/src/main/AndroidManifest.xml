@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <!-- Backfill: reads M-Pesa messages already in the inbox. Viable because the APK is sideloaded. -->
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <!-- Lets setup ask to be exempt from battery optimization, so the SMS receiver keeps working. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application

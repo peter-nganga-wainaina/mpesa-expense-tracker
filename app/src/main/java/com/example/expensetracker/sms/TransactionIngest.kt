@@ -18,34 +18,50 @@ interface TransactionStore {
      */
     suspend fun insertIfNew(transaction: MpesaTransaction, receivedAt: LocalDateTime): Boolean
 
-    /** Keeps a receipt the parser couldn't read, so it is never silently dropped. */
-    suspend fun saveUnparsed(body: String, receivedAt: LocalDateTime)
+    /**
+     * Keeps a receipt the parser couldn't read so it is never silently dropped. Kept once per
+     * [transactionCode], like transactions: a later sweep may read the same message back.
+     */
+    suspend fun saveUnparsed(transactionCode: String, body: String, receivedAt: LocalDateTime)
 
     suspend fun setCategory(transactionCode: String, categoryId: Long)
 }
 
+/** An M-Pesa message read back from the SMS inbox. */
+data class InboxMessage(val body: String, val receivedAt: LocalDateTime)
+
 /**
- * What happens to one M-Pesa message after it arrives: parse it, save it, then prompt for a category.
- * Shared by the SMS receiver and, later, the inbox backfill.
+ * What happens to an M-Pesa message: parse it, save it, and for a live message, prompt for a category.
+ * Shared by the SMS receiver and the inbox backfill.
  */
 class TransactionIngest(
     private val store: TransactionStore,
     private val suggester: CategorySuggester,
     private val notifier: TransactionNotifier,
 ) {
-    /** [receivedAt] is when the SMS arrived, used when the message itself carries no time. */
+    /** A message that just arrived. [receivedAt] is used when the message itself carries no time. */
     suspend fun ingest(body: String, receivedAt: LocalDateTime) {
-        when (val result = MpesaParser.parse(body)) {
-            is ParseResult.Parsed -> {
-                val transaction = result.transaction
-                if (store.insertIfNew(transaction, receivedAt)) {
-                    notifier.promptForCategory(transaction, suggester.suggest(transaction, QUICK_PICKS))
-                }
-            }
-            ParseResult.Unrecognized -> store.saveUnparsed(body, receivedAt)
-            ParseResult.Ignored -> Unit
-        }
+        val transaction = saveIfNew(body, receivedAt) ?: return
+        notifier.promptForCategory(transaction, suggester.suggest(transaction, QUICK_PICKS))
     }
+
+    /**
+     * Messages read back from the inbox. They wait in the queue without notifications: a burst of
+     * prompts for old spending would be noise. Returns how many transactions were new.
+     */
+    suspend fun backfill(messages: List<InboxMessage>): Int =
+        messages.count { saveIfNew(it.body, it.receivedAt) != null }
+
+    /** Saves the message; returns its transaction only if it wasn't already stored. */
+    private suspend fun saveIfNew(body: String, receivedAt: LocalDateTime): MpesaTransaction? =
+        when (val result = MpesaParser.parse(body)) {
+            is ParseResult.Parsed -> result.transaction.takeIf { store.insertIfNew(it, receivedAt) }
+            is ParseResult.Unrecognized -> {
+                store.saveUnparsed(result.code, body, receivedAt)
+                null
+            }
+            ParseResult.Ignored -> null
+        }
 
     private companion object {
         /** Android shows at most 3 notification actions: 2 quick picks plus "Other…". */

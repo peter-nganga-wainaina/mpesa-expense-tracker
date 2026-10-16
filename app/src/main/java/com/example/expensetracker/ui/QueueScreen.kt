@@ -1,8 +1,5 @@
 package com.example.expensetracker.ui
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -42,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import com.example.expensetracker.AppContainer
 import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.categorize.NewCategoryName
@@ -203,16 +199,13 @@ private fun NewCategoryDialog(existing: List<Category>, onAdd: (name: String) ->
     )
 }
 
-/** Shown until the app may read SMS and post notifications; without them nothing reaches the queue. */
+/** Shown while a permission is missing (e.g. denied at setup, or revoked later in Settings). */
 @Composable
 private fun PermissionBanner() {
     val context = LocalContext.current
-    fun allGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-    }
-    var granted by remember { mutableStateOf(allGranted()) }
+    var granted by remember { mutableStateOf(context.hasRequiredPermissions()) }
     val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        granted = allGranted()
+        granted = context.hasRequiredPermissions()
     }
     if (granted) return
 
@@ -223,8 +216,3 @@ private fun PermissionBanner() {
         }
     }
 }
-
-private val REQUIRED_PERMISSIONS = buildList {
-    add(Manifest.permission.RECEIVE_SMS)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
-}.toTypedArray()

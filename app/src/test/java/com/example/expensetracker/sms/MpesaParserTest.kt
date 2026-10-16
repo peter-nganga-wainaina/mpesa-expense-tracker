@@ -59,7 +59,7 @@ class MpesaParserTest {
 
     @Test
     fun `a code without a readable amount is unrecognized`() {
-        assertEquals(ParseResult.Unrecognized, MpesaParser.parse("XY12AB34CD Confirmed. Your request was completed."))
+        assertEquals(ParseResult.Unrecognized("XY12AB34CD"), MpesaParser.parse("XY12AB34CD Confirmed. Your request was completed."))
     }
 
     // Resilience to wording changes Safaricom might make.

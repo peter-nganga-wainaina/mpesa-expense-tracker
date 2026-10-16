@@ -51,6 +51,6 @@ interface CategoryDao {
 
 @Dao
 interface UnparsedMessageDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(message: UnparsedMessageEntity)
 }

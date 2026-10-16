@@ -48,7 +48,7 @@ class TransactionIngestTest {
 
         ingest(body)
 
-        assertEquals(listOf(body), store.unparsed)
+        assertEquals(mapOf("TL9Z8Y7X6W" to body), store.unparsed)
         assertTrue(store.saved.isEmpty())
         assertEquals(0, notifier.promptCount)
     }
@@ -62,10 +62,54 @@ class TransactionIngestTest {
         assertEquals(0, notifier.promptCount)
     }
 
+    // Backfill: messages read back from the inbox.
+
+    private fun backfill(vararg bodies: String) = runBlocking {
+        ingest.backfill(bodies.map { InboxMessage(it, RECEIVED_AT) })
+    }
+
+    @Test
+    fun `backfilled transactions are saved without prompting`() {
+        backfill(SENT_MESSAGE, PAID_MESSAGE)
+
+        assertEquals(setOf("TL1A2B3C4D", "TP2C3D4E5F"), store.saved.keys)
+        assertEquals(0, notifier.promptCount)
+    }
+
+    @Test
+    fun `backfill reports how many transactions were new`() {
+        ingest(SENT_MESSAGE)
+
+        assertEquals(1, backfill(SENT_MESSAGE, PAID_MESSAGE))
+    }
+
+    @Test
+    fun `backfilling the same messages again adds nothing`() {
+        backfill(SENT_MESSAGE, PAID_MESSAGE)
+
+        assertEquals(0, backfill(SENT_MESSAGE, PAID_MESSAGE))
+        assertEquals(2, store.saved.size)
+    }
+
+    @Test
+    fun `an unreadable receipt seen again by a later backfill is kept once`() {
+        val live = "TL9Z8Y7X6W Confirmed. Something new happened on 4/12/25 at 8:07 AM."
+        // Read back from the inbox, the same message can differ in spacing.
+        val fromInbox = "TL9Z8Y7X6W Confirmed.  Something new happened on 4/12/25 at 8:07 AM."
+
+        ingest(live)
+        backfill(fromInbox)
+
+        assertEquals(setOf("TL9Z8Y7X6W"), store.unparsed.keys)
+    }
+
     private companion object {
         val RECEIVED_AT: LocalDateTime = LocalDateTime.of(2025, 12, 4, 8, 7)
         const val SENT_MESSAGE =
             "TL1A2B3C4D Confirmed. Ksh1,100.00 sent to ALICE  MWANGI 0700000001 on 4/12/25 at 8:07 AM. " +
                 "New M-PESA balance is Ksh25,000.00. Transaction cost, Ksh23.00."
+        const val PAID_MESSAGE =
+            "TP2C3D4E5F Confirmed. Ksh780.00 paid to CARREFOUR. on 13/10/26 at 10:40 PM. " +
+                "New M-PESA balance is Ksh23,250.00. Transaction cost, Ksh0.00."
     }
 }

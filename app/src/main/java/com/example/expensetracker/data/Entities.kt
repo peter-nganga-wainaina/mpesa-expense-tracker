@@ -37,9 +37,10 @@ data class CategoryEntity(
     @ColumnInfo(collate = ColumnInfo.NOCASE) val name: String,
 )
 
+/** A receipt the parser couldn't read. Keyed by its transaction code, so each is kept once. */
 @Entity(tableName = "unparsed_messages")
 data class UnparsedMessageEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @PrimaryKey val code: String,
     val body: String,
     val receivedAt: String,
 )

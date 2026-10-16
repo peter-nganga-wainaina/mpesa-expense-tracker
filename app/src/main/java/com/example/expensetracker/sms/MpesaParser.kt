@@ -30,7 +30,7 @@ object MpesaParser {
         // A balance check carries a code and an amount but moves no money.
         if (BALANCE_CHECK.containsMatchIn(text)) return ParseResult.Ignored
 
-        val amount = AMOUNT.find(text)?.groupValues?.get(1) ?: return ParseResult.Unrecognized
+        val amount = AMOUNT.find(text)?.groupValues?.get(1) ?: return ParseResult.Unrecognized(code.uppercase())
         val type = TYPE_KEYWORDS.firstOrNull { (keyword, _) -> text.contains(keyword, ignoreCase = true) }?.second
             ?: UNKNOWN
         val party = counterparty(text, type)

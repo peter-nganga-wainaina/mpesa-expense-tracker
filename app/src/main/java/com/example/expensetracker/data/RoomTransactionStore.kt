@@ -12,8 +12,8 @@ class RoomTransactionStore(private val db: AppDatabase) : TransactionStore {
     override suspend fun insertIfNew(transaction: MpesaTransaction, receivedAt: LocalDateTime): Boolean =
         db.transactions().insert(transaction.toEntity(receivedAt)) != -1L
 
-    override suspend fun saveUnparsed(body: String, receivedAt: LocalDateTime) =
-        db.unparsedMessages().insert(UnparsedMessageEntity(body = body, receivedAt = receivedAt.toString()))
+    override suspend fun saveUnparsed(transactionCode: String, body: String, receivedAt: LocalDateTime) =
+        db.unparsedMessages().insert(UnparsedMessageEntity(transactionCode, body, receivedAt.toString()))
 
     override suspend fun setCategory(transactionCode: String, categoryId: Long) =
         db.transactions().setCategory(transactionCode, categoryId)

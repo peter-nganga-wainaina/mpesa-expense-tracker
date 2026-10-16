@@ -7,17 +7,18 @@ import com.example.expensetracker.sms.TransactionNotifier
 import com.example.expensetracker.sms.TransactionStore
 import java.time.LocalDateTime
 
-/** In-memory stand-in for the transaction tables, deduplicating by code like the real one. */
+/** In-memory stand-in for the transaction tables, deduplicating like the real ones. */
 class FakeTransactionStore : TransactionStore {
     val saved = linkedMapOf<String, MpesaTransaction>()
-    val unparsed = mutableListOf<String>()
+    /** Unreadable receipts by transaction code. */
+    val unparsed = linkedMapOf<String, String>()
     val categoryOf = mutableMapOf<String, Long>()
 
     override suspend fun insertIfNew(transaction: MpesaTransaction, receivedAt: LocalDateTime): Boolean =
         saved.putIfAbsent(transaction.code, transaction) == null
 
-    override suspend fun saveUnparsed(body: String, receivedAt: LocalDateTime) {
-        unparsed += body
+    override suspend fun saveUnparsed(transactionCode: String, body: String, receivedAt: LocalDateTime) {
+        unparsed.putIfAbsent(transactionCode, body)
     }
 
     override suspend fun setCategory(transactionCode: String, categoryId: Long) {
