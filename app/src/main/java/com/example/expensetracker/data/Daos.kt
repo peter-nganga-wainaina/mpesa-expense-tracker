@@ -32,6 +32,18 @@ interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY id")
     suspend fun getAll(): List<CategoryEntity>
 
+    /** Category of the most recent categorized transaction with this counterparty, ignoring case. */
+    @Query(
+        """
+        SELECT categories.* FROM transactions
+        JOIN categories ON categories.id = transactions.categoryId
+        WHERE transactions.counterparty = :counterparty COLLATE NOCASE
+        ORDER BY transactions.occurredAt DESC
+        LIMIT 1
+        """
+    )
+    suspend fun lastUsedFor(counterparty: String): CategoryEntity?
+
     /** Returns the new ID, or -1 when a category with this name already exists. */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(category: CategoryEntity): Long

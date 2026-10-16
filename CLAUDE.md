@@ -39,7 +39,7 @@ sms/MpesaSmsReceiver.kt          // manifest-registered SMS_RECEIVED receiver, s
 sms/MpesaParser.kt               // SMS body -> Transaction (pure Kotlin, no Android deps)
 sms/TransactionIngest.kt         // parse, dedupe by code, save, notify (shared by receiver and backfill)
 sms/InboxBackfill.kt             // scans SMS inbox for missed M-Pesa messages
-data/                            // Room: TransactionEntity, Category, MerchantMemory, UnparsedMessage
+data/                            // Room: transactions, categories, unparsed messages
 categorize/                      // Category, CategoryStore, Categorizer, new-name validation
 suggest/CategorySuggester.kt     // interface: transaction -> ranked category suggestions
 notify/CategoryPrompt.kt         // notification with category action buttons
@@ -74,12 +74,14 @@ ui/                              // uncategorized queue, category picker, settin
   The repayment is not spending (counting it would double-count).
 - **Unmatched messages** go to an `UnparsedMessage` table, never silently dropped.
 - **Notification:** max 3 actions, so use 2 smart picks plus "Other…". Smart picks come from
-  MerchantMemory (last category for this counterparty) first, then most-used categories.
-  MerchantMemory is keyed by counterparty name, not phone number, because numbers can be masked.
+  merchant memory (last category for this counterparty) first, then most-used categories.
+  Merchant memory is keyed by counterparty name (ignoring case), not phone number, because numbers
+  can be masked. It is derived from categorized transactions, not stored separately, so the user's
+  choices have one source of truth and re-categorizing updates it.
   "Other…" opens a dialog-themed activity with the full grid and "add new category".
   Android blocks background activity launches, so never pop a screen directly.
 - **Smart picks come from a `CategorySuggester` interface**, so sources can be added without
-  touching the notification code. The first implementation chains MerchantMemory, then most-used
+  touching the notification code. `ChainedSuggester` runs merchant memory, then most-used
   categories. A model-based suggester (on-device first, because this is financial data) may be added
   later for merchants with no history. It only suggests, never auto-assigns, and never blocks the
   notification on a network call.
@@ -95,8 +97,8 @@ ui/                              // uncategorized queue, category picker, settin
 ## Build order
 1. `MpesaParser` plus unit tests from real M-Pesa message samples  (done)
 2. Receiver, ingest, and a basic notification, tested on the emulator  (done)
-3. Room, the uncategorized queue screen, and the category picker  <- START HERE
-4. Merchant memory and smart picks, behind the `CategorySuggester` interface
+3. Room, the uncategorized queue screen, and the category picker  (done)
+4. Merchant memory and smart picks, behind the `CategorySuggester` interface  (done)
 5. Spending insights: in-app views of spending per category per month, plus sync or export once
    the target is chosen
 6. Inbox backfill and the first-run setup flow
@@ -111,7 +113,7 @@ ui/                              // uncategorized queue, category picker, settin
   point is a "Always file this here" option when categorizing.
   - First use case: Ziidi (M-Pesa money market fund) auto-saves a percentage of each payment as its
     own coded message ("sent to ZIIDI"), which today parses as SENT and prompts like spending. Until
-    rules exist, the user files it under "Savings" and MerchantMemory remembers it. With rules:
+    rules exist, the user files it under "Savings" and merchant memory remembers it. With rules:
     ZIIDI + SENT → savings deposit, ZIIDI + RECEIVED → savings withdrawal. Match the counterparty,
     not the word "Ziidi", since most messages carry a Ziidi promo tail, and confirm the real wording
     first: "for account" would make it PAYBILL instead of SENT.
