@@ -31,10 +31,11 @@ Built in slices; each one is usable on its own.
 | Slice | Status | What it delivers |
 |---|---|---|
 | **5a. Theme, navigation, history** | ✅ | Maroon & Latte (light) and Cocoa Night (dark) themes with a light/dark switch; bottom tabs (To categorize · History · Insights); a history list where any transaction can be re-categorized |
-| **5b. Monthly insights** | ✅ | A month's categorized totals, largest first, with a hand-drawn donut, a month switcher and a count of uncategorized transactions. Category-only for now: money in/out and fees are open questions below. |
+| **5b. Monthly insights** | ✅ | A month's categorized totals, largest first, with a hand-drawn donut, a month switcher and a count of uncategorized transactions. Money in/out comes in 5e. |
 | **5b+. Category drill-down** | ✅ | Tapping a category in Insights (e.g. October › Savings) opens a full screen listing that month's transactions in that category, grouped by day like History. Tapping one opens the usual picker to re-file it or see its original message. Read-only over existing data: nothing new is stored. Donut slices aren't tappable for now (too small to hit reliably). |
 | **5c. Manual add** | ✅ | Spending that never sends an SMS. A floating "+ Add spending" button on every tab opens a form: amount, optional "what for", paid with Cash / Card / Other, when (defaults to now), and category, picked right there (merchant memory pre-selects it). Saved straight to History and Insights, with no queue or notification; a brief "Saved Ksh450.00 · Food [View]" confirmation shows it worked, since the queue list itself doesn't change. Manual entries can be edited and deleted; M-Pesa entries can only be re-categorized. |
 | **5d. Unparsed messages** | ✅ | A screen listing receipts the parser couldn't read, reached from a banner on To categorize that only shows when there are some. Each one offers "Add as spending" (the entry takes the message's code, so it can only exist once; afterwards the card shows "Added as …" and offers Edit) and "Dismiss". Dismiss marks it dismissed rather than deleting it, or the sweep would bring it back. No phone notification for unreadable messages, and no Share button for now. |
+| **5e. Money in / out** | ⬜ Next | Every transaction gets a direction: **in**, **out**, or **transfer** (moved between her own pockets; counted in neither). Defaults by type, kept in one place: RECEIVED and FULIZA_DRAWDOWN are in; WITHDRAW is a transfer (cash moved from M-Pesa to her purse; the manual cash entries are the spending, so nothing is counted twice); everything else, and manual entries, is out. Insights gets a Money out / Money in switch, each with its own category breakdown, plus the month's net. This settles the Fuliza double count: a payment, a borrow (in) and a repayment (out) net to what actually left her. Open: whether she can change one transaction's direction by hand. |
 
 ## Before the first real install
 
@@ -43,6 +44,7 @@ Built in slices; each one is usable on its own.
 | Release signing key, backed up | ⬜ | Android only installs an update over an app signed with the same key. Losing the key means uninstalling, which wipes the data. |
 | Release build and APK size check | ⬜ | Confirms the shrunk build works and measures the real size |
 | Real-device check (Samsung) | ⬜ | Real Safaricom SMS delivery, notification behaviour, and Samsung's "Never sleeping apps" steps can't be tested on the emulator |
+| **App icon** | ⬜ | Replace the default Android icon with one in the maroon-and-brown look (options on the design canvas). An adaptive icon, so it suits Samsung's icon shapes. |
 | **Auto-update** | ⬜ | Must ship in the first installed version, or that version can't update itself. Sideloaded apps can't update silently: Android always asks the user to tap "Install". Likely shape: publish each signed APK as a GitHub Release; the app checks the latest release on open (or daily), and offers "Update available" → download → Android's install prompt. Needs the `INTERNET` permission (the app has none today, a privacy-visible change for a finance app) and `REQUEST_INSTALL_PACKAGES`. Every update must be signed with the same release key. A no-code alternative: Obtainium, a third-party app that watches a GitHub repo's releases and installs updates. |
 | **CI: tests on every push** | ✅ `.github/workflows/tests.yml` runs the unit tests on every push and pull request | A GitHub Actions workflow running `./gradlew :app:testDebugUnitTest` on push and pull request, on GitHub's machines (no load on the dev Mac). Later it can also build the signed release APK and attach it to a GitHub Release, which is what auto-update would download. |
 
@@ -63,6 +65,6 @@ Built in slices; each one is usable on its own.
 
 | Question | Affects |
 |---|---|
-| How should categories, money in/out, and rules work together? Leaning towards no meaning baked into the app: parsing stays in code, while interpretation (direction, category, whether to prompt) becomes user-editable rules seeded with defaults. Fuliza shows why it matters: a payment, a borrow and a repayment are three messages, and adding them up naively double-counts. | 5b, rules |
+| How should user-editable rules fit with the direction defaults (5e)? Parsing stays in code; interpretation (direction, category, whether to prompt) should become rules seeded with the defaults. | Rules |
 | Where should data sync to, if anywhere? | Sync / export |
 | Should transaction fees show in insights, as their own line or inside each category? They are parsed and stored already. | Insights |

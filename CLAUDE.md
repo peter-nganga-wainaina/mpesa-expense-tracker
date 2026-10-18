@@ -96,9 +96,11 @@ ui/                              // uncategorized queue, category picker, settin
     or 30 days. Default 14.
   - **Sweeper:** a fixed, invisible 3-day look-back on every app open and daily (WorkManager,
     `DailySweepWorker`), catching anything the receiver missed. Overlap is harmless: codes dedupe.
-- **Insights start from categories.** The app doesn't decide what counts as "spending"; the user's
-  categories carry the meaning (e.g. a "Savings" category). Whether to also split money in vs out,
-  and how user-editable rules fit in, is an open question in `ROADMAP.md`. Don't bake either in.
+- **Money in / out / transfer.** Each transaction has a direction, defaulted by type in one place:
+  RECEIVED and FULIZA_DRAWDOWN are in; WITHDRAW is a transfer (cash moved to her purse; manual cash
+  entries are the spending, so it isn't counted twice); everything else, including manual entries,
+  is out. Insights splits money out and money in by category, with the month's net. Categories still
+  carry the meaning (e.g. "Savings", "Fuliza"); user-editable rules may override the defaults later.
 - **Look:** warm and vibrant, built on maroon and brown. Light theme "Maroon & Latte" (latte
   background, maroon highlights, espresso text) and dark theme "Cocoa Night" (chocolate background,
   maroon highlights, cream text). A light/dark switch in the app. Category colours are separate
@@ -121,6 +123,12 @@ milestone or slice is finished, and start work from its "Now" section.
 
 ## Working agreements
 - Write tests alongside the parser and keep the parser free of Android imports.
+- Where tests live: each component's unit tests sit next to it by package. Shared fakes are in
+  `app/src/test/.../testing/Fakes.kt` and must follow the real rules (Room's skip-on-insert,
+  replace-on-save, unique codes). Seam scenarios (real-wording SMS through parser, ingest,
+  categorizing and the monthly summary) are in `scenarios/MoneyScenarioTest.kt`.
+- Any new money rule (e.g. money in/out, transfers) gets a seam scenario there, written before the
+  code. Run `make coverage` to spot logic left untested.
 - Real message samples live in `app/src/test/resources/mpesa_samples/`. Treat them as private and
   anonymize names and phone numbers before committing.
 - Ask before adding new dependencies.
