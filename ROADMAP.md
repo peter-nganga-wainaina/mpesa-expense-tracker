@@ -44,7 +44,7 @@ Built in slices; each one is usable on its own.
 | Release build and APK size check | ⬜ | Confirms the shrunk build works and measures the real size |
 | Real-device check (Samsung) | ⬜ | Real Safaricom SMS delivery, notification behaviour, and Samsung's "Never sleeping apps" steps can't be tested on the emulator |
 | **Auto-update** | ⬜ | Must ship in the first installed version, or that version can't update itself. Sideloaded apps can't update silently: Android always asks the user to tap "Install". Likely shape: publish each signed APK as a GitHub Release; the app checks the latest release on open (or daily), and offers "Update available" → download → Android's install prompt. Needs the `INTERNET` permission (the app has none today, a privacy-visible change for a finance app) and `REQUEST_INSTALL_PACKAGES`. Every update must be signed with the same release key. A no-code alternative: Obtainium, a third-party app that watches a GitHub repo's releases and installs updates. |
-| **CI: tests on every push** | ⬜ | A GitHub Actions workflow running `./gradlew :app:testDebugUnitTest` on push and pull request, on GitHub's machines (no load on the dev Mac). Later it can also build the signed release APK and attach it to a GitHub Release, which is what auto-update would download. |
+| **CI: tests on every push** | ⏳ Workflow added (`.github/workflows/tests.yml`); confirmed by its first run on GitHub | A GitHub Actions workflow running `./gradlew :app:testDebugUnitTest` on push and pull request, on GitHub's machines (no load on the dev Mac). Later it can also build the signed release APK and attach it to a GitHub Release, which is what auto-update would download. |
 
 ## Later
 

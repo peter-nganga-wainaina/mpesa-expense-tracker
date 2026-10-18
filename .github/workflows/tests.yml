@@ -1,0 +1,38 @@
+# Runs the JVM unit tests on every push and pull request, on GitHub's machines rather than the dev Mac.
+name: Unit tests
+
+on:
+  push:
+  pull_request:
+
+# A newer push to the same branch makes an older, still-running check pointless.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same JDK as Android Studio's bundled runtime, so CI builds the way local builds do.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      # Caches Gradle downloads between runs and checks the wrapper jar is genuine.
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest
+
+      # Only on failure: the HTML report shows which test failed and why.
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: app/build/reports/tests/testDebugUnitTest/
