@@ -68,7 +68,7 @@ fun AppShell(
             when (tab) {
                 Tab.Queue -> QueueScreen(container, requestedCode, onRequestHandled)
                 Tab.History -> HistoryScreen(container)
-                Tab.Insights -> InsightsPlaceholder()
+                Tab.Insights -> InsightsScreen(container, onOpenQueue = { tab = Tab.Queue })
             }
             ThemeToggle(showingDark, onToggleTheme, Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = 4.dp))
         }
@@ -82,12 +82,5 @@ private fun ThemeToggle(showingDark: Boolean, onToggle: () -> Unit, modifier: Mo
             painterResource(if (showingDark) R.drawable.ic_light_mode else R.drawable.ic_dark_mode),
             contentDescription = if (showingDark) "Switch to light theme" else "Switch to dark theme",
         )
-    }
-}
-
-@Composable
-private fun InsightsPlaceholder() {
-    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-        Text("Monthly insights are coming next.", style = MaterialTheme.typography.titleLarge)
     }
 }

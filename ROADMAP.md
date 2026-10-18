@@ -31,8 +31,8 @@ Built in slices; each one is usable on its own.
 | Slice | Status | What it delivers |
 |---|---|---|
 | **5a. Theme, navigation, history** | ✅ | Maroon & Latte (light) and Cocoa Night (dark) themes with a light/dark switch; bottom tabs (To categorize · History · Insights); a history list where any transaction can be re-categorized |
-| **5b. Monthly insights** | ⬜ Next | A month's totals broken down by category; hand-drawn donut chart; month switcher. Depends on the first open question below. |
-| **5c. Manual add** | ⬜ | A **+** button for cash and card spending that never sends an SMS |
+| **5b. Monthly insights** | ✅ | A month's categorized totals, largest first, with a hand-drawn donut, a month switcher and a count of uncategorized transactions. Category-only for now: money in/out and fees are open questions below. |
+| **5c. Manual add** | ⬜ Next | A **+** button for cash and card spending that never sends an SMS |
 | **5d. Unparsed messages** | ⬜ | A screen listing receipts the parser couldn't read, so they can be checked |
 
 ## Before the first real install
@@ -42,6 +42,8 @@ Built in slices; each one is usable on its own.
 | Release signing key, backed up | ⬜ | Android only installs an update over an app signed with the same key. Losing the key means uninstalling, which wipes the data. |
 | Release build and APK size check | ⬜ | Confirms the shrunk build works and measures the real size |
 | Real-device check (Samsung) | ⬜ | Real Safaricom SMS delivery, notification behaviour, and Samsung's "Never sleeping apps" steps can't be tested on the emulator |
+| **Auto-update** | ⬜ | Must ship in the first installed version, or that version can't update itself. Sideloaded apps can't update silently: Android always asks the user to tap "Install". Likely shape: publish each signed APK as a GitHub Release; the app checks the latest release on open (or daily), and offers "Update available" → download → Android's install prompt. Needs the `INTERNET` permission (the app has none today, a privacy-visible change for a finance app) and `REQUEST_INSTALL_PACKAGES`. Every update must be signed with the same release key. A no-code alternative: Obtainium, a third-party app that watches a GitHub repo's releases and installs updates. |
+| **CI: tests on every push** | ⬜ | A GitHub Actions workflow running `./gradlew :app:testDebugUnitTest` on push and pull request, on GitHub's machines (no load on the dev Mac). Later it can also build the signed release APK and attach it to a GitHub Release, which is what auto-update would download. |
 
 ## Later
 
@@ -61,3 +63,4 @@ Built in slices; each one is usable on its own.
 |---|---|
 | How should categories, money in/out, and rules work together? Leaning towards no meaning baked into the app: parsing stays in code, while interpretation (direction, category, whether to prompt) becomes user-editable rules seeded with defaults. Fuliza shows why it matters: a payment, a borrow and a repayment are three messages, and adding them up naively double-counts. | 5b, rules |
 | Where should data sync to, if anywhere? | Sync / export |
+| Should transaction fees show in insights, as their own line or inside each category? They are parsed and stored already. | Insights |
