@@ -11,7 +11,7 @@ viable.
 - Kotlin, Jetpack Compose (Empty Activity template), min SDK 26, Gradle Kotlin DSL
 - Room (SQLite) for local storage; the on-device database is the source of truth
 - WorkManager for the daily inbox sweep
-- Off-device sync or export is undecided (see Build order step 5)
+- Off-device sync or export is undecided (see `ROADMAP.md`)
 
 ## Dev machine constraints
 - MacBook with 8 GB RAM, which is tight with Android Studio open. Follow these rules:
@@ -94,6 +94,15 @@ ui/                              // uncategorized queue, category picker, settin
     or 30 days. Default 14.
   - **Sweeper:** a fixed, invisible 3-day look-back on every app open and daily (WorkManager,
     `DailySweepWorker`), catching anything the receiver missed. Overlap is harmless: codes dedupe.
+- **Insights start from categories.** The app doesn't decide what counts as "spending"; the user's
+  categories carry the meaning (e.g. a "Savings" category). Whether to also split money in vs out,
+  and how user-editable rules fit in, is an open question in `ROADMAP.md`. Don't bake either in.
+- **Look:** warm and vibrant, built on maroon and brown. Light theme "Maroon & Latte" (latte
+  background, maroon highlights, espresso text) and dark theme "Cocoa Night" (chocolate background,
+  maroon highlights, cream text). A light/dark switch in the app. Category colours are separate
+  vibrant accents (gold, rose, terracotta, caramel, sage) that differ in lightness, not just hue.
+- **Charts are drawn by hand in Compose** (donut, stacked bars) for full control over the look.
+  A chart library (likely Vico) is for trend charts later; ask before adding it.
 - **Sync / export is undecided** (Google Sheet, a hosted database, or none). Whatever is chosen:
   only categorized rows, retried in the background (WorkManager) with a network constraint, and
   re-categorization updates the row matching the transaction code instead of adding a duplicate.
@@ -101,31 +110,9 @@ ui/                              // uncategorized queue, category picker, settin
   instructions to add the app to Samsung's "Never sleeping apps".
 - **Manual add** button for cash and card spending.
 
-## Build order
-1. `MpesaParser` plus unit tests from real M-Pesa message samples  (done)
-2. Receiver, ingest, and a basic notification, tested on the emulator  (done)
-3. Room, the uncategorized queue screen, and the category picker  (done)
-4. Merchant memory and smart picks, behind the `CategorySuggester` interface  (done)
-5. Spending insights: in-app views of spending per category per month, plus sync or export once
-   the target is chosen
-6. First-run setup (permissions, first import, battery) and inbox backfill  <- START HERE
-
-## Future features
-- **"Import older messages"** in settings: pull in history beyond the first import (e.g. up to 30
-  days or more) at any time. Reuses the backfill; duplicates are skipped by transaction code.
-- **User-defined auto-categorization rules.** The user creates rules such as "counterparty is X
-  (optionally: and type is SENT/RECEIVED/...) → category Y". In `TransactionIngest`, after parsing
-  and saving: if a rule matches, assign its category with no notification; otherwise
-  notify as usual. Rules are the user's own decisions, so this doesn't conflict with suggesters never
-  auto-assigning. Keep rule matching pure Kotlin (testable on the JVM), match on parsed fields rather
-  than raw message text, and let the user list, edit, and delete rules in settings. A natural entry
-  point is a "Always file this here" option when categorizing.
-  - First use case: Ziidi (M-Pesa money market fund) auto-saves a percentage of each payment as its
-    own coded message ("sent to ZIIDI"), which today parses as SENT and prompts like spending. Until
-    rules exist, the user files it under "Savings" and merchant memory remembers it. With rules:
-    ZIIDI + SENT → savings deposit, ZIIDI + RECEIVED → savings withdrawal. Match the counterparty,
-    not the word "Ziidi", since most messages carry a Ziidi promo tail, and confirm the real wording
-    first: "for account" would make it PAYBILL instead of SENT.
+## Roadmap
+Build order, status, later features and open questions live in `ROADMAP.md`. Update it when a
+milestone or slice is finished, and start work from its "Now" section.
 
 ## Working agreements
 - Write tests alongside the parser and keep the parser free of Android imports.
