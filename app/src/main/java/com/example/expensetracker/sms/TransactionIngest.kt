@@ -20,7 +20,8 @@ interface TransactionStore {
 
     /**
      * Keeps a receipt the parser couldn't read so it is never silently dropped. Kept once per
-     * [transactionCode], like transactions: a later sweep may read the same message back.
+     * [transactionCode], like transactions: when a later sweep reads it back, the existing record
+     * is left as it is, so one the user dismissed stays dismissed.
      */
     suspend fun saveUnparsed(transactionCode: String, sms: ReceivedSms)
 

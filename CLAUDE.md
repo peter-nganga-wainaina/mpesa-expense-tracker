@@ -124,6 +124,8 @@ milestone or slice is finished, and start work from its "Now" section.
 - Real message samples live in `app/src/test/resources/mpesa_samples/`. Treat them as private and
   anonymize names and phone numbers before committing.
 - Ask before adding new dependencies.
+- The database schema is explained in `docs/DATABASE.md`. Update it in the same change as any entity
+  change; `DatabaseDocTest` fails if a table or column is missing from it.
 - Verify UI and Android-framework changes with the `verify-on-emulator` skill
   (`.claude/skills/verify-on-emulator/`) before calling them done; it includes `tap.sh` for tapping
   by text.

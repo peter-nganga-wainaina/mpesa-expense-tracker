@@ -14,6 +14,8 @@ class FakeTransactionStore : TransactionStore {
     val originalMessages = mutableMapOf<String, String>()
     /** Unreadable receipts by transaction code. */
     val unparsed = linkedMapOf<String, String>()
+    /** Codes of unreadable receipts the user dismissed. */
+    val dismissedUnparsed = mutableSetOf<String>()
     val categoryOf = mutableMapOf<String, Long>()
 
     override suspend fun insertIfNew(transaction: MpesaTransaction, sms: ReceivedSms): Boolean {
@@ -23,9 +25,17 @@ class FakeTransactionStore : TransactionStore {
         return true
     }
 
+    // Like the real insert: an existing record, dismissed or not, is left as it is.
     override suspend fun saveUnparsed(transactionCode: String, sms: ReceivedSms) {
         unparsed.putIfAbsent(transactionCode, sms.body)
     }
+
+    fun dismissUnparsed(code: String) {
+        dismissedUnparsed += code
+    }
+
+    /** What the user would see: unreadable receipts not dismissed. */
+    val waitingUnparsed: Set<String> get() = unparsed.keys - dismissedUnparsed
 
     override suspend fun setCategory(transactionCode: String, categoryId: Long) {
         categoryOf[transactionCode] = categoryId

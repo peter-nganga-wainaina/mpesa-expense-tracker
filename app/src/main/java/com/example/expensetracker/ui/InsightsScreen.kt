@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.AppContainer
@@ -169,7 +170,14 @@ private fun CategoryList(totals: List<CategoryTotal>, onOpen: (Category) -> Unit
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 CategoryDot(total.category)
-                Text(total.category.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                // The name gives way (ellipsis) so the amount never breaks across lines.
+                Text(
+                    total.category.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
                 Text(
                     "${total.percent}%",
                     style = MaterialTheme.typography.bodyMedium,
@@ -179,8 +187,8 @@ private fun CategoryList(totals: List<CategoryTotal>, onOpen: (Category) -> Unit
                     formatKsh(total.totalCents),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.width(112.dp),
+                    maxLines = 1,
+                    softWrap = false,
                 )
             }
         }

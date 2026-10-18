@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "ec791a7efa9f71dd800a24565fac37e3",
+    "identityHash": "8d70c9aea02cd32870503e77c7bb3c05",
     "entities": [
       {
         "tableName": "transactions",
@@ -138,7 +138,7 @@
       },
       {
         "tableName": "unparsed_messages",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`code` TEXT NOT NULL, `body` TEXT NOT NULL, `receivedAt` TEXT NOT NULL, PRIMARY KEY(`code`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`code` TEXT NOT NULL, `body` TEXT NOT NULL, `receivedAt` TEXT NOT NULL, `dismissed` INTEGER NOT NULL, PRIMARY KEY(`code`))",
         "fields": [
           {
             "fieldPath": "code",
@@ -157,6 +157,12 @@
             "columnName": "receivedAt",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "dismissed",
+            "columnName": "dismissed",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -169,7 +175,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ec791a7efa9f71dd800a24565fac37e3')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8d70c9aea02cd32870503e77c7bb3c05')"
     ]
   }
 }

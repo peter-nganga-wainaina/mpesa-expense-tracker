@@ -63,7 +63,7 @@ fun TransactionDayList(
                     day.entries.forEach { entry ->
                         // Manual entries open their form (edit or delete); M-Pesa ones can only be re-filed.
                         HistoryRow(entry, showCategory, onClick = {
-                            if (entry.source.isManual) editingCode = entry.transaction.code else pickingCode = entry.transaction.code
+                            if (entry.isManual) editingCode = entry.transaction.code else pickingCode = entry.transaction.code
                         })
                     }
                 }
@@ -115,7 +115,7 @@ private fun HistoryRow(entry: StoredTransaction, showCategory: Boolean, onClick:
             Text(describe(entry.transaction), style = MaterialTheme.typography.bodyLarge)
             entry.transaction.occurredAt?.let {
                 val time = timeLabel(it)
-                Text(if (entry.source.isManual) "$time · ${entry.source.label}" else time, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(if (entry.isManual) "$time · ${entry.source.label}" else time, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         if (showCategory) CategoryTag(entry)

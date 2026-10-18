@@ -117,6 +117,17 @@ class TransactionIngestTest {
         assertEquals(setOf("TL9Z8Y7X6W"), store.unparsed.keys)
     }
 
+    @Test
+    fun `a dismissed unreadable receipt stays dismissed when a sweep reads it again`() {
+        val body = "TL9Z8Y7X6W Confirmed. Something new happened on 4/12/25 at 8:07 AM."
+        ingest(body)
+        store.dismissUnparsed("TL9Z8Y7X6W")
+
+        backfill(body)
+
+        assertTrue(store.waitingUnparsed.isEmpty())
+    }
+
     private companion object {
         val RECEIVED_AT: LocalDateTime = LocalDateTime.of(2025, 12, 4, 8, 7)
         const val SENT_MESSAGE =

@@ -3,18 +3,19 @@ package com.example.expensetracker.manual
 import java.time.LocalDateTime
 import java.util.UUID
 
-/** How a transaction was paid. M-Pesa ones come from SMS; the rest are added by hand. */
+/**
+ * How a transaction was paid. Separate from who entered it: an entry typed in from an unreadable
+ * M-Pesa message was paid with M-Pesa but entered by hand (its type is MANUAL).
+ */
 enum class PaymentSource(val label: String) {
     MPESA("M-Pesa"),
     CASH("Cash"),
     CARD("Card"),
     OTHER("Other");
 
-    val isManual: Boolean get() = this != MPESA
-
     companion object {
-        /** The choices offered in the add form. */
-        val MANUAL = entries.filter { it.isManual }
+        /** The choices offered in the add form for spending with no M-Pesa message behind it. */
+        val MANUAL = listOf(CASH, CARD, OTHER)
     }
 }
 
@@ -30,8 +31,7 @@ data class ManualEntry(
 ) {
     init {
         require(amountCents > 0) { "Amount must be positive: $amountCents" }
-        require(source.isManual) { "Manual entries can't be M-Pesa" }
-        require(isManualCode(code)) { "Not a manual entry code: $code" }
+        require(code.isNotBlank()) { "A manual entry needs a code" }
     }
 }
 
@@ -53,14 +53,11 @@ fun editableAmount(cents: Long): String =
 private val AMOUNT = Regex("""\d{1,9}(\.\d{1,2})?""")
 
 /**
- * A new manual entry's ID. M-Pesa codes are exactly 10 letters and digits; these contain "-", so the
- * two can never collide in the shared transaction table.
+ * A new manual entry's ID, for spending with no M-Pesa message behind it. M-Pesa codes are exactly
+ * 10 letters and digits; a UUID is 36 characters with dashes, so the two can never collide in the
+ * shared transaction table. Whether a row was entered by hand is its type (MANUAL), not its code.
  */
-fun newManualCode(uuid: UUID = UUID.randomUUID()): String = "$MANUAL_PREFIX$uuid"
-
-fun isManualCode(code: String): Boolean = code.startsWith(MANUAL_PREFIX)
-
-private const val MANUAL_PREFIX = "MANUAL-"
+fun newManualCode(uuid: UUID = UUID.randomUUID()): String = uuid.toString()
 
 /** What the add form holds while the user types; [check] turns it into an entry or says what's missing. */
 data class ManualEntryForm(

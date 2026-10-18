@@ -2,16 +2,19 @@ package com.example.expensetracker.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -30,21 +33,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.AppContainer
+import com.example.expensetracker.categorize.Category
+import com.example.expensetracker.manual.ManualEntry
+import com.example.expensetracker.unparsed.unparsedBannerText
 import com.example.expensetracker.notify.describe
 import com.example.expensetracker.notify.formatOccurredAt
 import com.example.expensetracker.sms.MpesaTransaction
 
 /**
- * Every transaction still waiting for a category, with a picker for each.
- * [requestedCode] opens the picker for one transaction, when arriving from its notification.
+ * Every transaction still waiting for a category, with a picker for each, and a banner leading to
+ * any unreadable M-Pesa messages. [requestedCode] opens the picker for one transaction, when
+ * arriving from its notification.
  */
 @Composable
 fun QueueScreen(
     container: AppContainer,
     requestedCode: String?,
     onRequestHandled: () -> Unit,
+    onManualSaved: (ManualEntry, Category) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showingUnparsed by rememberSaveable { mutableStateOf(false) }
+    if (showingUnparsed) {
+        UnparsedScreen(container, onBack = { showingUnparsed = false }, onManualSaved = onManualSaved, modifier = modifier)
+        return
+    }
+    val unparsed by remember { container.transactions.observeUnparsed() }.collectAsState(initial = emptyList())
     // Null until the database first answers, so an empty queue isn't mistaken for "still loading".
     val queue by remember { container.transactions.observeUncategorized() }.collectAsState(initial = null)
     val categories by remember { container.categories.observeAll() }.collectAsState(initial = emptyList())
@@ -60,13 +74,15 @@ fun QueueScreen(
     }
 
     Column(modifier.padding(horizontal = 16.dp)) {
-        PermissionBanner()
         val waiting = queue.orEmpty()
         Text(
             "To categorize (${waiting.size})",
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(vertical = 16.dp),
         )
+        // Below the heading: the top-right corner belongs to the theme toggle, which would cover them.
+        PermissionBanner()
+        unparsedBannerText(unparsed.size)?.let { UnparsedBanner(it, onOpen = { showingUnparsed = true }) }
         when {
             queue == null -> Unit
             waiting.isEmpty() -> AllCaughtUp()
@@ -121,6 +137,23 @@ private fun AllCaughtUp() {
     }
 }
 
+/** Only appears while there are unreadable messages to look at. */
+@Composable
+private fun UnparsedBanner(text: String, onOpen: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(bottom = 12.dp)
+            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp))
+            .clickable(onClickLabel = "View unreadable messages", onClick = onOpen)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.weight(1f))
+        Text("View ›", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+    }
+}
+
 /** Shown while a permission is missing (e.g. denied at setup, or revoked later in Settings). */
 @Composable
 private fun PermissionBanner() {
@@ -131,7 +164,7 @@ private fun PermissionBanner() {
     }
     if (granted) return
 
-    Card(Modifier.fillMaxWidth().padding(top = 16.dp)) {
+    Card(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Allow SMS and notifications so M-Pesa transactions show up here and prompt you to categorize them.")
             Button(onClick = { request.launch(REQUIRED_PERMISSIONS) }) { Text("Allow") }

@@ -33,6 +33,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.AppContainer
 import com.example.expensetracker.R
+import com.example.expensetracker.categorize.Category
+import com.example.expensetracker.manual.ManualEntry
 import com.example.expensetracker.notify.formatKsh
 import kotlinx.coroutines.launch
 
@@ -58,6 +60,20 @@ fun AppShell(
     var adding by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Manual entries skip the queue, so say where one went: the current list may not change.
+    val confirmSaved: (ManualEntry, Category) -> Unit = { entry, category ->
+        scope.launch {
+            // Material's default for a snackbar with an action is to stay until tapped; this one
+            // only confirms, so it goes away by itself (about 4 seconds; longer with a screen reader).
+            val result = snackbar.showSnackbar(
+                "Saved ${formatKsh(entry.amountCents)} · ${category.name}",
+                actionLabel = "View",
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed) tab = Tab.History
+        }
+    }
 
     // Arriving from a notification: its picker lives on the queue tab.
     LaunchedEffect(requestedCode) { if (requestedCode != null) tab = Tab.Queue }
@@ -95,7 +111,7 @@ fun AppShell(
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when (tab) {
-                Tab.Queue -> QueueScreen(container, requestedCode, onRequestHandled)
+                Tab.Queue -> QueueScreen(container, requestedCode, onRequestHandled, onManualSaved = confirmSaved)
                 Tab.History -> HistoryScreen(container)
                 Tab.Insights -> InsightsScreen(container, onOpenQueue = { tab = Tab.Queue })
             }
@@ -107,20 +123,7 @@ fun AppShell(
         AddSpendingSheet(
             container,
             editing = null,
-            onSaved = { entry, category ->
-                adding = false
-                // Manual entries skip the queue, so say where it went: the current list may not change.
-                scope.launch {
-                    // Material's default for a snackbar with an action is to stay until tapped; this one
-                    // only confirms, so it goes away by itself (about 4 seconds; longer with a screen reader).
-                    val result = snackbar.showSnackbar(
-                        "Saved ${formatKsh(entry.amountCents)} · ${category.name}",
-                        actionLabel = "View",
-                        duration = SnackbarDuration.Short,
-                    )
-                    if (result == SnackbarResult.ActionPerformed) tab = Tab.History
-                }
-            },
+            onSaved = { entry, category -> adding = false; confirmSaved(entry, category) },
             onDismiss = { adding = false },
         )
     }

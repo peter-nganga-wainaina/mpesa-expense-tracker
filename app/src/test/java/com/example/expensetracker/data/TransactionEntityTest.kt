@@ -6,6 +6,7 @@ import com.example.expensetracker.manual.PaymentSource
 import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.MpesaTransactionType.SENT
 import com.example.expensetracker.sms.ReceivedSms
+import com.example.expensetracker.unparsed.UnparsedMessage
 import java.time.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -99,6 +100,13 @@ class TransactionEntityTest {
         assertEquals("Mama Mboga", stored.transaction.counterparty)
         assertEquals(45000L, stored.transaction.amountCents)
         assertNull(stored.originalMessage)
+    }
+
+    @Test
+    fun `an unreadable receipt reads back with its text and arrival time`() {
+        val row = UnparsedMessageEntity("TL9Z8Y7X6W", "TL9Z8Y7X6W Confirmed. Something new.", receivedAt.toString())
+
+        assertEquals(UnparsedMessage("TL9Z8Y7X6W", "TL9Z8Y7X6W Confirmed. Something new.", receivedAt), row.toUnparsedMessage())
     }
 
     private fun transaction(occurredAt: LocalDateTime? = null) = MpesaTransaction(

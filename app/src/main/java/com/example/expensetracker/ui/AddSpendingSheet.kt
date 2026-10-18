@@ -54,6 +54,8 @@ import com.example.expensetracker.manual.ManualEntryForm
 import com.example.expensetracker.manual.PaymentSource
 import com.example.expensetracker.manual.check
 import com.example.expensetracker.manual.editableAmount
+import com.example.expensetracker.unparsed.UnparsedMessage
+import com.example.expensetracker.unparsed.entryCodeFor
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -64,7 +66,9 @@ import kotlinx.coroutines.launch
 
 /**
  * The add form: amount, what for, how it was paid, when, and category. With [editing] set it edits
- * that manual entry instead, and offers Delete. [onSaved] receives the saved entry and its category.
+ * that manual entry instead, and offers Delete. With [fromMessage] set it types in an unreadable
+ * M-Pesa message: the entry takes the message's code (so it can only ever exist once), was paid with
+ * M-Pesa, and starts at the message's time. [onSaved] receives the saved entry and its category.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,6 +76,7 @@ fun AddSpendingSheet(
     container: AppContainer,
     editing: StoredTransaction?,
     onSaved: (ManualEntry, Category) -> Unit,
+    fromMessage: UnparsedMessage? = null,
     onDismiss: () -> Unit,
 ) {
     val categories by remember { container.categories.observeAll() }.collectAsState(initial = emptyList())
@@ -81,9 +86,11 @@ fun AddSpendingSheet(
     // Plain strings and enums so the half-filled form survives rotation.
     var amountText by rememberSaveable { mutableStateOf(editing?.let { editableAmount(it.transaction.amountCents) } ?: "") }
     var note by rememberSaveable { mutableStateOf(editing?.transaction?.counterparty ?: "") }
-    var source by rememberSaveable { mutableStateOf(editing?.source ?: PaymentSource.CASH) }
+    var source by rememberSaveable {
+        mutableStateOf(editing?.source ?: if (fromMessage != null) PaymentSource.MPESA else PaymentSource.CASH)
+    }
     var occurredAtText by rememberSaveable {
-        mutableStateOf((editing?.transaction?.occurredAt ?: LocalDateTime.now().withSecond(0).withNano(0)).toString())
+        mutableStateOf((editing?.transaction?.occurredAt ?: fromMessage?.receivedAt ?: LocalDateTime.now().withSecond(0).withNano(0)).toString())
     }
     var categoryId by rememberSaveable { mutableStateOf(editing?.category?.id) }
     var pickedCategoryByHand by rememberSaveable { mutableStateOf(editing != null) }
@@ -101,7 +108,7 @@ fun AddSpendingSheet(
     }
 
     val form = ManualEntryForm(amountText, note, source, occurredAt, categoryId)
-    val checked = form.check(existingCode = editing?.transaction?.code)
+    val checked = form.check(existingCode = editing?.transaction?.code ?: fromMessage?.let(::entryCodeFor))
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -111,7 +118,14 @@ fun AddSpendingSheet(
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(if (editing == null) "Add spending" else "Edit spending", style = MaterialTheme.typography.headlineSmall)
+            Text(
+                when {
+                    editing != null -> "Edit spending"
+                    fromMessage != null -> "Add from message"
+                    else -> "Add spending"
+                },
+                style = MaterialTheme.typography.headlineSmall,
+            )
 
             OutlinedTextField(
                 value = amountText,
@@ -140,7 +154,10 @@ fun AddSpendingSheet(
 
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Paid with", style = MaterialTheme.typography.labelLarge)
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                // Typed in from an M-Pesa message, so it was paid with M-Pesa: not a choice.
+                if (source == PaymentSource.MPESA) {
+                    Text("M-Pesa (from the message)", style = MaterialTheme.typography.bodyLarge)
+                } else SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                     PaymentSource.MANUAL.forEachIndexed { index, option ->
                         SegmentedButton(
                             selected = source == option,

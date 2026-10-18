@@ -50,4 +50,9 @@ data class UnparsedMessageEntity(
     @PrimaryKey val code: String,
     val body: String,
     val receivedAt: String,
+    /**
+     * The user has dealt with it. A flag rather than a delete: the sweep re-reads recent SMS, and
+     * the insert keeps the existing row, so a dismissed message stays dismissed.
+     */
+    val dismissed: Boolean = false,
 )

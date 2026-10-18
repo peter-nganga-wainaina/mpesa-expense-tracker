@@ -31,8 +31,8 @@ interface TransactionDao {
     @Upsert
     suspend fun upsert(transaction: TransactionEntity)
 
-    /** Deletes a manual entry; the source check makes it impossible to delete an M-Pesa transaction. */
-    @Query("DELETE FROM transactions WHERE code = :code AND source != 'MPESA'")
+    /** Deletes a manual entry; the type check makes it impossible to delete a parsed M-Pesa transaction. */
+    @Query("DELETE FROM transactions WHERE code = :code AND type = 'MANUAL'")
     suspend fun deleteManual(code: String): Int
 
     @Query("UPDATE transactions SET categoryId = :categoryId WHERE code = :code")
@@ -73,6 +73,13 @@ interface CategoryDao {
 
 @Dao
 interface UnparsedMessageDao {
+    /** IGNORE keeps an existing row as it is, including whether it was dismissed. */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(message: UnparsedMessageEntity)
+
+    @Query("SELECT * FROM unparsed_messages WHERE dismissed = 0 ORDER BY receivedAt DESC")
+    fun observeWaiting(): Flow<List<UnparsedMessageEntity>>
+
+    @Query("UPDATE unparsed_messages SET dismissed = 1 WHERE code = :code")
+    suspend fun dismiss(code: String)
 }

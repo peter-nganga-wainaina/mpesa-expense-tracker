@@ -42,8 +42,6 @@ class ManualEntriesTest {
         val mpesaCode = Regex("""[A-Z0-9]{10}""")
 
         repeat(50) { assertFalse(mpesaCode.matches(newManualCode())) }
-        assertTrue(isManualCode(newManualCode()))
-        assertFalse(isManualCode("TL1A2B3C4D"))
     }
 
     @Test

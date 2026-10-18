@@ -4,11 +4,11 @@ import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.manual.ManualEntry
 import com.example.expensetracker.manual.ManualEntryStore
 import com.example.expensetracker.manual.PaymentSource
-import com.example.expensetracker.manual.isManualCode
 import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.MpesaTransactionType
 import com.example.expensetracker.sms.ReceivedSms
 import com.example.expensetracker.sms.TransactionStore
+import com.example.expensetracker.unparsed.UnparsedMessage
 import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -24,8 +24,8 @@ class RoomTransactionStore(private val db: AppDatabase) : TransactionStore, Manu
     override suspend fun save(entry: ManualEntry) = db.transactions().upsert(entry.toEntity())
 
     override suspend fun delete(code: String) {
-        require(isManualCode(code)) { "Only manual entries can be deleted: $code" }
-        db.transactions().deleteManual(code)
+        // Fail loudly rather than silently ignore: the UI only offers Delete on manual entries.
+        check(db.transactions().deleteManual(code) == 1) { "No manual entry to delete with code $code" }
     }
 
     override suspend fun setCategory(transactionCode: String, categoryId: Long) =
@@ -34,6 +34,12 @@ class RoomTransactionStore(private val db: AppDatabase) : TransactionStore, Manu
     /** Every transaction, newest first, with its category; updates as transactions arrive or get filed. */
     fun observeHistory(): Flow<List<StoredTransaction>> =
         db.transactions().observeHistory().map { rows -> rows.map { it.toStoredTransaction() } }
+
+    /** Unreadable receipts the user hasn't dismissed, newest first. */
+    fun observeUnparsed(): Flow<List<UnparsedMessage>> =
+        db.unparsedMessages().observeWaiting().map { rows -> rows.map { it.toUnparsedMessage() } }
+
+    suspend fun dismissUnparsed(code: String) = db.unparsedMessages().dismiss(code)
 
     /** Uncategorized transactions, newest first, updating as they arrive or get filed. */
     fun observeUncategorized(): Flow<List<StoredTransaction>> =
@@ -49,7 +55,10 @@ data class StoredTransaction(
     val category: Category?,
     val originalMessage: String?,
     val source: PaymentSource,
-)
+) {
+    /** Typed in by the user (editable and deletable), as opposed to read from an SMS. */
+    val isManual: Boolean get() = transaction.type == MpesaTransactionType.MANUAL
+}
 
 fun TransactionWithCategory.toStoredTransaction(): StoredTransaction {
     val categoryId = transaction.categoryId
@@ -57,6 +66,8 @@ fun TransactionWithCategory.toStoredTransaction(): StoredTransaction {
     val category = categoryId?.let { Category(it, checkNotNull(categoryName) { "Category $it has no name" }) }
     return StoredTransaction(transaction.toTransaction(), category, transaction.body, PaymentSource.valueOf(transaction.source))
 }
+
+fun UnparsedMessageEntity.toUnparsedMessage() = UnparsedMessage(code, body, LocalDateTime.parse(receivedAt))
 
 /** A new, uncategorized row. Falls back to the arrival time when the message carried no time of its own. */
 fun MpesaTransaction.toEntity(sms: ReceivedSms) = TransactionEntity(
