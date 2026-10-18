@@ -34,6 +34,13 @@ class TransactionIngestTest {
     }
 
     @Test
+    fun `the original message is kept with the transaction`() {
+        ingest(SENT_MESSAGE)
+
+        assertEquals(SENT_MESSAGE, store.originalMessages["TL1A2B3C4D"])
+    }
+
+    @Test
     fun `a message delivered twice is saved and prompted only once`() {
         ingest(SENT_MESSAGE)
         ingest(SENT_MESSAGE)
@@ -65,7 +72,7 @@ class TransactionIngestTest {
     // Backfill: messages read back from the inbox.
 
     private fun backfill(vararg bodies: String) = runBlocking {
-        ingest.backfill(bodies.map { InboxMessage(it, RECEIVED_AT) })
+        ingest.backfill(bodies.map { ReceivedSms(it, RECEIVED_AT) })
     }
 
     @Test
@@ -74,6 +81,13 @@ class TransactionIngestTest {
 
         assertEquals(setOf("TL1A2B3C4D", "TP2C3D4E5F"), store.saved.keys)
         assertEquals(0, notifier.promptCount)
+    }
+
+    @Test
+    fun `backfilled transactions keep their original message too`() {
+        backfill(PAID_MESSAGE)
+
+        assertEquals(PAID_MESSAGE, store.originalMessages["TP2C3D4E5F"])
     }
 
     @Test

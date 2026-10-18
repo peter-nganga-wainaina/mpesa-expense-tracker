@@ -3,6 +3,7 @@ package com.example.expensetracker.data
 import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.MpesaTransactionType.SENT
+import com.example.expensetracker.sms.ReceivedSms
 import java.time.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -12,22 +13,23 @@ import org.junit.Test
 class TransactionEntityTest {
 
     private val receivedAt = LocalDateTime.of(2025, 12, 4, 8, 9)
+    private val sms = ReceivedSms("TL1A2B3C4D Confirmed. Ksh1,100.00 sent to ALICE MWANGI on 4/12/25 at 8:07 AM.", receivedAt)
 
     @Test
     fun `a new transaction is stored uncategorized`() {
-        assertNull(transaction().toEntity(receivedAt).categoryId)
+        assertNull(transaction().toEntity(sms).categoryId)
     }
 
     @Test
     fun `the time in the message is used when present`() {
-        val entity = transaction(occurredAt = LocalDateTime.of(2025, 12, 4, 8, 7)).toEntity(receivedAt)
+        val entity = transaction(occurredAt = LocalDateTime.of(2025, 12, 4, 8, 7)).toEntity(sms)
 
         assertEquals(LocalDateTime.of(2025, 12, 4, 8, 7), LocalDateTime.parse(entity.occurredAt))
     }
 
     @Test
     fun `the SMS arrival time is used when the message has no time`() {
-        val entity = transaction(occurredAt = null).toEntity(receivedAt)
+        val entity = transaction(occurredAt = null).toEntity(sms)
 
         assertEquals(receivedAt, LocalDateTime.parse(entity.occurredAt))
     }
@@ -39,7 +41,7 @@ class TransactionEntityTest {
             LocalDateTime.of(2025, 10, 1, 0, 0),
             LocalDateTime.of(2025, 12, 4, 8, 7),
         )
-        val stored = times.map { transaction(occurredAt = it).toEntity(receivedAt).occurredAt }
+        val stored = times.map { transaction(occurredAt = it).toEntity(sms).occurredAt }
 
         assertTrue(stored == stored.sorted())
     }
@@ -48,26 +50,33 @@ class TransactionEntityTest {
     fun `a stored transaction reads back unchanged`() {
         val original = transaction(occurredAt = LocalDateTime.of(2025, 12, 4, 8, 7))
 
-        assertEquals(original, original.toEntity(receivedAt).toTransaction())
+        assertEquals(original, original.toEntity(sms).toTransaction())
     }
 
     @Test
     fun `a transaction stored without its own time reads back with the arrival time`() {
-        assertEquals(receivedAt, transaction(occurredAt = null).toEntity(receivedAt).toTransaction().occurredAt)
+        assertEquals(receivedAt, transaction(occurredAt = null).toEntity(sms).toTransaction().occurredAt)
     }
 
     @Test
     fun `an uncategorized transaction appears in history without a category`() {
-        val row = TransactionWithCategory(transaction().toEntity(receivedAt), categoryName = null)
+        val row = TransactionWithCategory(transaction().toEntity(sms), categoryName = null)
 
-        assertNull(row.toHistoryItem().category)
+        assertNull(row.toStoredTransaction().category)
     }
 
     @Test
     fun `a categorized transaction appears in history with its category`() {
-        val entity = transaction().toEntity(receivedAt).copy(categoryId = 7)
+        val entity = transaction().toEntity(sms).copy(categoryId = 7)
 
-        assertEquals(Category(7, "Groceries"), TransactionWithCategory(entity, "Groceries").toHistoryItem().category)
+        assertEquals(Category(7, "Groceries"), TransactionWithCategory(entity, "Groceries").toStoredTransaction().category)
+    }
+
+    @Test
+    fun `a stored transaction keeps its original message`() {
+        val row = TransactionWithCategory(transaction().toEntity(sms), categoryName = null)
+
+        assertEquals(sms.body, row.toStoredTransaction().originalMessage)
     }
 
     private fun transaction(occurredAt: LocalDateTime? = null) = MpesaTransaction(

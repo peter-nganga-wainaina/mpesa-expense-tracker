@@ -7,9 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,11 +44,13 @@ import com.example.expensetracker.ui.theme.categoryColor
 /**
  * Bottom sheet for filing one transaction: every category, plus "New category". Shared by the
  * queue (first-time filing) and History (re-filing), where [currentCategoryId] is highlighted.
+ * [originalMessage] is the SMS as received, tucked away so filing stays a single tap.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CategoryPicker(
     transaction: MpesaTransaction,
+    originalMessage: String,
     categories: List<Category>,
     currentCategoryId: Long?,
     onPick: (Category) -> Unit,
@@ -58,6 +63,7 @@ fun CategoryPicker(
         Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 32.dp)) {
             Text(describe(transaction), style = MaterialTheme.typography.titleLarge)
             transaction.occurredAt?.let { Text(formatOccurredAt(it), style = MaterialTheme.typography.bodySmall) }
+            OriginalMessage(originalMessage)
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(top = 16.dp),
@@ -76,6 +82,27 @@ fun CategoryPicker(
             onAdd = { addingCategory = false; onAddCategory(it) },
             onDismiss = { addingCategory = false },
         )
+    }
+}
+
+@Composable
+private fun OriginalMessage(message: String) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    TextButton(onClick = { expanded = !expanded }, modifier = Modifier.padding(top = 4.dp)) {
+        Text(if (expanded) "Hide original message" else "Show original message")
+    }
+    if (expanded) {
+        // Selectable so a code or amount can be copied, e.g. to quote it to customer care.
+        SelectionContainer {
+            Text(
+                message,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(12.dp))
+                    .padding(12.dp),
+            )
+        }
     }
 }
 

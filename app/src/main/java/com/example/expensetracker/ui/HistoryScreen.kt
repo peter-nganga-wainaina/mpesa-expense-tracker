@@ -27,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.expensetracker.AppContainer
-import com.example.expensetracker.data.HistoryItem
+import com.example.expensetracker.data.StoredTransaction
 import com.example.expensetracker.notify.describe
 import java.time.LocalDate
 
@@ -74,6 +74,7 @@ fun HistoryScreen(container: AppContainer, modifier: Modifier = Modifier) {
     if (picking != null) {
         CategoryPicker(
             transaction = picking.transaction,
+            originalMessage = picking.originalMessage,
             categories = categories,
             currentCategoryId = picking.category?.id,
             onPick = { filing.fileUnder(picking.transaction.code, it); pickingCode = null },
@@ -94,7 +95,7 @@ private fun DayHeading(label: String) {
 }
 
 @Composable
-private fun HistoryRow(entry: HistoryItem, onClick: () -> Unit) {
+private fun HistoryRow(entry: StoredTransaction, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -115,7 +116,7 @@ private fun HistoryRow(entry: HistoryItem, onClick: () -> Unit) {
 
 /** The category with its colour, or a maroon outline asking for one. */
 @Composable
-private fun CategoryTag(entry: HistoryItem) {
+private fun CategoryTag(entry: StoredTransaction) {
     val shape = RoundedCornerShape(12.dp)
     val category = entry.category
     if (category == null) {

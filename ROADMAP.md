@@ -22,6 +22,7 @@ Status: ✅ done · ⏳ in progress · ⬜ not started
 | 3 | ✅ Storage and categorizing | Room database, uncategorized queue, category picker, notification quick picks |
 | 4 | ✅ Smart picks | Merchant memory first, then most-used categories, behind `CategorySuggester` |
 | 6 | ✅ Setup and backfill | First-run setup (permissions, first import of 0/7/14/30 days, battery), inbox sweep on app open and daily |
+| — | ✅ Original message | Each transaction keeps its full SMS; "Show original message" in the picker shows it (selectable) |
 
 ## Now: milestone 5, insights
 
@@ -53,7 +54,6 @@ Built in slices; each one is usable on its own.
 | **Import older messages** | A settings option to pull in history beyond the first import. Reuses the backfill; duplicates are skipped by transaction code. |
 | **Uncategorized reminder** | A gentle "3 transactions waiting" nudge if items sit uncategorized for a day or so |
 | **Model-based suggestions** | For merchants with no history; on-device first, since this is financial data. Suggests only, never assigns. |
-| **Keep the raw SMS text, and show it** | Save each transaction's full message. Tapping a transaction shows it under an "Original message" section in the picker (collapsed by default), so the user can check what the app read, plus details it doesn't show (balance, fee, account number). Also keeps receipts if the SMS app is cleared, and lets old transactions be re-parsed if the parser improves. ~200 bytes per message. **Cheapest before the first real install:** until then it's an in-place schema change; afterwards it needs a migration, and transactions saved before it have no message to show. |
 
 ## Open questions
 

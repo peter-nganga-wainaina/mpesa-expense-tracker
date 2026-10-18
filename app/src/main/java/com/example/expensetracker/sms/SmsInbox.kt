@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 /** Reads M-Pesa messages from the system SMS inbox. The SMS app stores multipart messages joined. */
 class SmsInbox(private val context: Context) : MpesaInbox {
 
-    override suspend fun messagesSince(since: LocalDateTime): List<InboxMessage> = withContext(Dispatchers.IO) {
+    override suspend fun messagesSince(since: LocalDateTime): List<ReceivedSms> = withContext(Dispatchers.IO) {
         // Without READ_SMS there is nothing to read; live SMS still arrive through the receiver.
         if (!canRead()) return@withContext emptyList()
         val zone = ZoneId.systemDefault()
@@ -33,7 +33,7 @@ class SmsInbox(private val context: Context) : MpesaInbox {
             buildList {
                 while (it.moveToNext()) {
                     val receivedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(it.getLong(date)), zone)
-                    add(InboxMessage(it.getString(body).orEmpty(), receivedAt))
+                    add(ReceivedSms(it.getString(body).orEmpty(), receivedAt))
                 }
             }
         }

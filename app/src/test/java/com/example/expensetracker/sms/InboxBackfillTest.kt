@@ -18,7 +18,7 @@ class InboxBackfillTest {
 
     /** An inbox holding one M-Pesa payment per age, filtering by time like the real one. */
     private fun backfillWithMessagesAged(vararg ages: Long): InboxBackfill {
-        val messages = ages.mapIndexed { i, daysAgo -> InboxMessage(payment(code = "TX%08d".format(i)), now.minusDays(daysAgo)) }
+        val messages = ages.mapIndexed { i, daysAgo -> ReceivedSms(payment(code = "TX%08d".format(i)), now.minusDays(daysAgo)) }
         return InboxBackfill(inbox = { since -> messages.filter { it.receivedAt >= since } }, ingest = ingest, now = { now })
     }
 

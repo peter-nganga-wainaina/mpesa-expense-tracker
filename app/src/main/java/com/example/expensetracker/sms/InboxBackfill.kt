@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 /** M-Pesa messages already sitting in the phone's SMS inbox. */
 fun interface MpesaInbox {
     /** Messages from M-Pesa received at or after [since], oldest first. */
-    suspend fun messagesSince(since: LocalDateTime): List<InboxMessage>
+    suspend fun messagesSince(since: LocalDateTime): List<ReceivedSms>
 }
 
 /**

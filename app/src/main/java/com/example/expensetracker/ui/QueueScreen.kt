@@ -54,7 +54,7 @@ fun QueueScreen(
         val loaded = queue ?: return@LaunchedEffect
         if (requestedCode == null) return@LaunchedEffect
         // Already filed (e.g. from a notification button): nothing to pick.
-        if (loaded.any { it.code == requestedCode }) pickingCode = requestedCode
+        if (loaded.any { it.transaction.code == requestedCode }) pickingCode = requestedCode
         onRequestHandled()
     }
 
@@ -70,8 +70,8 @@ fun QueueScreen(
             queue == null -> Unit
             waiting.isEmpty() -> AllCaughtUp()
             else -> LazyColumn {
-                items(waiting, key = { it.code }) { transaction ->
-                    QueueRow(transaction, onClick = { pickingCode = transaction.code })
+                items(waiting, key = { it.transaction.code }) { entry ->
+                    QueueRow(entry.transaction, onClick = { pickingCode = entry.transaction.code })
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
@@ -79,14 +79,16 @@ fun QueueScreen(
     }
 
     // The sheet closes by itself once its transaction leaves the queue, wherever it was filed.
-    val picking = queue?.firstOrNull { it.code == pickingCode }
+    val picking = queue?.firstOrNull { it.transaction.code == pickingCode }
     if (picking != null) {
+        val code = picking.transaction.code
         CategoryPicker(
-            transaction = picking,
+            transaction = picking.transaction,
+            originalMessage = picking.originalMessage,
             categories = categories,
             currentCategoryId = null,
-            onPick = { filing.fileUnder(picking.code, it); pickingCode = null },
-            onAddCategory = { filing.fileUnderNew(picking.code, it); pickingCode = null },
+            onPick = { filing.fileUnder(code, it); pickingCode = null },
+            onAddCategory = { filing.fileUnderNew(code, it); pickingCode = null },
             onDismiss = { pickingCode = null },
         )
     }

@@ -72,6 +72,8 @@ ui/                              // uncategorized queue, category picker, settin
 - **Phone numbers are optional and opaque.** Since 2026, received-money messages mask the sender's
   number (`0700***003`). Pochi la Biashara sends have no number at all.
 - **Transaction cost is stored separately** from the amount, for tracking.
+- **The full SMS is stored with each transaction** (`body`), shown on request as "original message"
+  and available for re-parsing if the parser improves. Same for unparsed messages.
 - **Fuliza:** the payment message is the spending. The drawdown's access fee is recorded as a cost.
   The repayment is not spending (counting it would double-count).
 - **Unmatched messages** go to an `UnparsedMessage` table, never silently dropped.

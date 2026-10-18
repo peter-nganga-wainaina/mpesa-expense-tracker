@@ -16,19 +16,19 @@ interface TransactionStore {
      * Saves [transaction] as uncategorized unless one with the same code exists. Returns whether it was
      * new, so a re-delivered message isn't notified twice; insert-and-report keeps the check atomic.
      */
-    suspend fun insertIfNew(transaction: MpesaTransaction, receivedAt: LocalDateTime): Boolean
+    suspend fun insertIfNew(transaction: MpesaTransaction, sms: ReceivedSms): Boolean
 
     /**
      * Keeps a receipt the parser couldn't read so it is never silently dropped. Kept once per
      * [transactionCode], like transactions: a later sweep may read the same message back.
      */
-    suspend fun saveUnparsed(transactionCode: String, body: String, receivedAt: LocalDateTime)
+    suspend fun saveUnparsed(transactionCode: String, sms: ReceivedSms)
 
     suspend fun setCategory(transactionCode: String, categoryId: Long)
 }
 
-/** An M-Pesa message read back from the SMS inbox. */
-data class InboxMessage(val body: String, val receivedAt: LocalDateTime)
+/** An M-Pesa SMS: its full text and when it arrived, whether live or read back from the inbox. */
+data class ReceivedSms(val body: String, val receivedAt: LocalDateTime)
 
 /**
  * What happens to an M-Pesa message: parse it, save it, and for a live message, prompt for a category.
@@ -41,7 +41,7 @@ class TransactionIngest(
 ) {
     /** A message that just arrived. [receivedAt] is used when the message itself carries no time. */
     suspend fun ingest(body: String, receivedAt: LocalDateTime) {
-        val transaction = saveIfNew(body, receivedAt) ?: return
+        val transaction = saveIfNew(ReceivedSms(body, receivedAt)) ?: return
         notifier.promptForCategory(transaction, suggester.suggest(transaction, QUICK_PICKS))
     }
 
@@ -49,15 +49,15 @@ class TransactionIngest(
      * Messages read back from the inbox. They wait in the queue without notifications: a burst of
      * prompts for old spending would be noise. Returns how many transactions were new.
      */
-    suspend fun backfill(messages: List<InboxMessage>): Int =
-        messages.count { saveIfNew(it.body, it.receivedAt) != null }
+    suspend fun backfill(messages: List<ReceivedSms>): Int =
+        messages.count { saveIfNew(it) != null }
 
     /** Saves the message; returns its transaction only if it wasn't already stored. */
-    private suspend fun saveIfNew(body: String, receivedAt: LocalDateTime): MpesaTransaction? =
-        when (val result = MpesaParser.parse(body)) {
-            is ParseResult.Parsed -> result.transaction.takeIf { store.insertIfNew(it, receivedAt) }
+    private suspend fun saveIfNew(sms: ReceivedSms): MpesaTransaction? =
+        when (val result = MpesaParser.parse(sms.body)) {
+            is ParseResult.Parsed -> result.transaction.takeIf { store.insertIfNew(it, sms) }
             is ParseResult.Unrecognized -> {
-                store.saveUnparsed(result.code, body, receivedAt)
+                store.saveUnparsed(result.code, sms)
                 null
             }
             ParseResult.Ignored -> null

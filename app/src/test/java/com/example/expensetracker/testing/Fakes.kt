@@ -3,22 +3,28 @@ package com.example.expensetracker.testing
 import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.categorize.CategoryStore
 import com.example.expensetracker.sms.MpesaTransaction
+import com.example.expensetracker.sms.ReceivedSms
 import com.example.expensetracker.sms.TransactionNotifier
 import com.example.expensetracker.sms.TransactionStore
-import java.time.LocalDateTime
 
 /** In-memory stand-in for the transaction tables, deduplicating like the real ones. */
 class FakeTransactionStore : TransactionStore {
     val saved = linkedMapOf<String, MpesaTransaction>()
+    /** The original SMS kept with each saved transaction, by code. */
+    val originalMessages = mutableMapOf<String, String>()
     /** Unreadable receipts by transaction code. */
     val unparsed = linkedMapOf<String, String>()
     val categoryOf = mutableMapOf<String, Long>()
 
-    override suspend fun insertIfNew(transaction: MpesaTransaction, receivedAt: LocalDateTime): Boolean =
-        saved.putIfAbsent(transaction.code, transaction) == null
+    override suspend fun insertIfNew(transaction: MpesaTransaction, sms: ReceivedSms): Boolean {
+        if (transaction.code in saved) return false
+        saved[transaction.code] = transaction
+        originalMessages[transaction.code] = sms.body
+        return true
+    }
 
-    override suspend fun saveUnparsed(transactionCode: String, body: String, receivedAt: LocalDateTime) {
-        unparsed.putIfAbsent(transactionCode, body)
+    override suspend fun saveUnparsed(transactionCode: String, sms: ReceivedSms) {
+        unparsed.putIfAbsent(transactionCode, sms.body)
     }
 
     override suspend fun setCategory(transactionCode: String, categoryId: Long) {
