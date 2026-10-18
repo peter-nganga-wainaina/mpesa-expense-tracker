@@ -25,6 +25,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Built-in JaCoCo coverage for JVM unit tests (no extra plugin): `make coverage`.
+            enableUnitTestCoverage = true
+        }
         release {
             optimization {
                 enable = true

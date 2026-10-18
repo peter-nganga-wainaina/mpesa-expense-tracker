@@ -26,8 +26,36 @@ jobs:
       # Caches Gradle downloads between runs and checks the wrapper jar is genuine.
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Run unit tests
-        run: ./gradlew :app:testDebugUnitTest
+      # Runs the unit tests too: the coverage report depends on them.
+      - name: Run unit tests with coverage
+        run: ./gradlew :app:createDebugUnitTestCoverageReport
+
+      # A per-package line coverage table on the run's summary page.
+      - name: Summarize coverage
+        if: success()
+        run: |
+          python3 - app/build/reports/coverage/test/debug/report.xml >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          root = ET.parse(sys.argv[1]).getroot()
+          def lines(e):
+              c = next(x for x in e.findall("counter") if x.get("type") == "LINE")
+              covered, missed = int(c.get("covered")), int(c.get("missed"))
+              return covered, covered + missed
+          print("| Package | Line coverage |\n|---|---|")
+          for p in sorted(root.findall("package"), key=lambda p: p.get("name")):
+              covered, total = lines(p)
+              name = p.get("name").removeprefix("com/example/expensetracker").lstrip("/") or "(root)"
+              print(f"| {name} | {100 * covered // total}% ({covered}/{total}) |")
+          covered, total = lines(root)
+          print(f"| **Total** | **{100 * covered // total}%** |")
+          PY
+
+      - name: Upload coverage report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: app/build/reports/coverage/test/debug/
 
       # Only on failure: the HTML report shows which test failed and why.
       - name: Upload test report
