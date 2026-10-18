@@ -12,6 +12,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -110,7 +111,13 @@ fun AppShell(
                 adding = false
                 // Manual entries skip the queue, so say where it went: the current list may not change.
                 scope.launch {
-                    val result = snackbar.showSnackbar("Saved ${formatKsh(entry.amountCents)} · ${category.name}", actionLabel = "View")
+                    // Material's default for a snackbar with an action is to stay until tapped; this one
+                    // only confirms, so it goes away by itself (about 10 seconds).
+                    val result = snackbar.showSnackbar(
+                        "Saved ${formatKsh(entry.amountCents)} · ${category.name}",
+                        actionLabel = "View",
+                        duration = SnackbarDuration.Long,
+                    )
                     if (result == SnackbarResult.ActionPerformed) tab = Tab.History
                 }
             },
