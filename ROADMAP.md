@@ -32,6 +32,7 @@ Built in slices; each one is usable on its own.
 |---|---|---|
 | **5a. Theme, navigation, history** | ✅ | Maroon & Latte (light) and Cocoa Night (dark) themes with a light/dark switch; bottom tabs (To categorize · History · Insights); a history list where any transaction can be re-categorized |
 | **5b. Monthly insights** | ✅ | A month's categorized totals, largest first, with a hand-drawn donut, a month switcher and a count of uncategorized transactions. Category-only for now: money in/out and fees are open questions below. |
+| **5b+. Category drill-down** | ✅ | Tapping a category in Insights (e.g. October › Savings) opens a full screen listing that month's transactions in that category, grouped by day like History. Tapping one opens the usual picker to re-file it or see its original message. Read-only over existing data: nothing new is stored. Donut slices aren't tappable for now (too small to hit reliably). |
 | **5c. Manual add** | ⬜ Next | A **+** button for cash and card spending that never sends an SMS |
 | **5d. Unparsed messages** | ⬜ | A screen listing receipts the parser couldn't read, so they can be checked |
 

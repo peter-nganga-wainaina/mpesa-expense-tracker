@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.AppContainer
+import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.insights.CategoryTotal
 import com.example.expensetracker.insights.MonthSummary
 import com.example.expensetracker.insights.canGoBack
@@ -45,17 +46,29 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** A month's categorized totals: a donut, then each category largest first. [onOpenQueue] goes to the queue. */
+/**
+ * A month's categorized totals: a donut, then each category largest first. Tapping a category shows
+ * the transactions behind its total. [onOpenQueue] goes to the queue.
+ */
 @Composable
 fun InsightsScreen(container: AppContainer, onOpenQueue: () -> Unit, modifier: Modifier = Modifier) {
     val history by remember { container.transactions.observeHistory() }.collectAsState(initial = null)
+    val categories by remember { container.categories.observeAll() }.collectAsState(initial = emptyList())
     val current = YearMonth.now()
     // YearMonth isn't saveable as-is; its ISO text ("2026-10") is.
     var monthText by rememberSaveable { mutableStateOf(current.toString()) }
+    var openCategoryId by rememberSaveable { mutableStateOf<Long?>(null) }
     val month = YearMonth.parse(monthText)
     val transactions = history ?: return
     val summary = remember(transactions, month) { summarize(month, transactions) }
     val earliest = remember(transactions) { earliestMonth(transactions) }
+
+    // Looked up by id so the detail stays open even after its last transaction is re-filed elsewhere.
+    val openCategory = openCategoryId?.let { id -> categories.firstOrNull { it.id == id } }
+    if (openCategory != null) {
+        CategoryDetailScreen(container, month, openCategory, transactions, onBack = { openCategoryId = null }, modifier = modifier)
+        return
+    }
 
     Column(
         modifier
@@ -73,7 +86,7 @@ fun InsightsScreen(container: AppContainer, onOpenQueue: () -> Unit, modifier: M
             onForward = { monthText = month.plusMonths(1).toString() },
         )
         TotalCard(summary)
-        if (summary.categories.isNotEmpty()) CategoryList(summary.categories)
+        if (summary.categories.isNotEmpty()) CategoryList(summary.categories, onOpen = { openCategoryId = it.id })
         if (summary.uncategorizedCount > 0) UncategorizedNote(summary.uncategorizedCount, onOpenQueue)
     }
 }
@@ -138,7 +151,7 @@ private fun TotalCard(summary: MonthSummary) {
 }
 
 @Composable
-private fun CategoryList(totals: List<CategoryTotal>) {
+private fun CategoryList(totals: List<CategoryTotal>, onOpen: (Category) -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -148,7 +161,10 @@ private fun CategoryList(totals: List<CategoryTotal>) {
         totals.forEachIndexed { index, total ->
             if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(onClickLabel = "Show ${total.category.name} transactions") { onOpen(total.category) }
+                    .padding(vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
