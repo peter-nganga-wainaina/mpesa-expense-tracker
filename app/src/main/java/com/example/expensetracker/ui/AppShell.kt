@@ -112,11 +112,11 @@ fun AppShell(
                 // Manual entries skip the queue, so say where it went: the current list may not change.
                 scope.launch {
                     // Material's default for a snackbar with an action is to stay until tapped; this one
-                    // only confirms, so it goes away by itself (about 10 seconds).
+                    // only confirms, so it goes away by itself (about 4 seconds; longer with a screen reader).
                     val result = snackbar.showSnackbar(
                         "Saved ${formatKsh(entry.amountCents)} · ${category.name}",
                         actionLabel = "View",
-                        duration = SnackbarDuration.Long,
+                        duration = SnackbarDuration.Short,
                     )
                     if (result == SnackbarResult.ActionPerformed) tab = Tab.History
                 }
