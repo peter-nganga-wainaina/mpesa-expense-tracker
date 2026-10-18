@@ -26,8 +26,13 @@ data class TransactionEntity(
     val phone: String?,
     val reference: String?,
     val occurredAt: String,
-    /** The full SMS as received, so the user can check what the app read and it can be re-parsed later. */
-    val body: String,
+    /**
+     * The full SMS as received, so the user can check what the app read and it can be re-parsed later.
+     * Null for entries added by hand.
+     */
+    val body: String?,
+    /** A [com.example.expensetracker.manual.PaymentSource] name: MPESA for SMS, else how it was paid. */
+    val source: String,
     /** Null until the user picks a category. */
     val categoryId: Long? = null,
 )

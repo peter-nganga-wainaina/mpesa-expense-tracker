@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "b5f3fc154a85b24149f3ea0c84057e44",
+    "identityHash": "ec791a7efa9f71dd800a24565fac37e3",
     "entities": [
       {
         "tableName": "transactions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`code` TEXT NOT NULL, `type` TEXT NOT NULL, `amountCents` INTEGER NOT NULL, `costCents` INTEGER NOT NULL, `counterparty` TEXT, `phone` TEXT, `reference` TEXT, `occurredAt` TEXT NOT NULL, `body` TEXT NOT NULL, `categoryId` INTEGER, PRIMARY KEY(`code`), FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`code` TEXT NOT NULL, `type` TEXT NOT NULL, `amountCents` INTEGER NOT NULL, `costCents` INTEGER NOT NULL, `counterparty` TEXT, `phone` TEXT, `reference` TEXT, `occurredAt` TEXT NOT NULL, `body` TEXT, `source` TEXT NOT NULL, `categoryId` INTEGER, PRIMARY KEY(`code`), FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
         "fields": [
           {
             "fieldPath": "code",
@@ -56,6 +56,11 @@
           {
             "fieldPath": "body",
             "columnName": "body",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -164,7 +169,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b5f3fc154a85b24149f3ea0c84057e44')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ec791a7efa9f71dd800a24565fac37e3')"
     ]
   }
 }

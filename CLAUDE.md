@@ -110,7 +110,10 @@ ui/                              // uncategorized queue, category picker, settin
   re-categorization updates the row matching the transaction code instead of adding a duplicate.
 - **Battery:** prompt with `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` on first run, and show
   instructions to add the app to Samsung's "Never sleeping apps".
-- **Manual add** button for cash and card spending.
+- **Manual add** for spending without an SMS: a floating "+ Add spending" button on every tab, with
+  a brief "Saved … [View]" confirmation (manual entries skip the queue, so the list there won't change). Entries get a generated ID that can't clash with M-Pesa codes, a source (Cash / Card /
+  Other), and their category chosen in the form, so they skip the queue. Only manual entries can be
+  edited or deleted; M-Pesa entries are facts from the SMS and can only be re-categorized.
 
 ## Roadmap
 Build order, status, later features and open questions live in `ROADMAP.md`. Update it when a

@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -69,7 +70,7 @@ fun QueueScreen(
         when {
             queue == null -> Unit
             waiting.isEmpty() -> AllCaughtUp()
-            else -> LazyColumn {
+            else -> LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
                 items(waiting, key = { it.transaction.code }) { entry ->
                     QueueRow(entry.transaction, onClick = { pickingCode = entry.transaction.code })
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

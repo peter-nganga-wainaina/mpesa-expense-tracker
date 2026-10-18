@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -42,12 +43,14 @@ fun TransactionDayList(
 ) {
     val categories by remember { container.categories.observeAll() }.collectAsState(initial = emptyList())
     var pickingCode by rememberSaveable { mutableStateOf<String?>(null) }
+    var editingCode by rememberSaveable { mutableStateOf<String?>(null) }
     val filing = rememberFiling(container)
     val today = LocalDate.now()
 
     // Stored transactions always have a time: the arrival time stands in when the SMS has none.
     val days = groupByDay(entries) { checkNotNull(it.transaction.occurredAt) }
-    LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    // Bottom padding keeps the last rows clear of the floating "Add spending" button.
+    LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(bottom = 96.dp)) {
         days.forEach { day ->
             item(key = day.date.toString()) { DayHeading(dayLabel(day.date, today)) }
             item(key = "${day.date}-entries") {
@@ -58,11 +61,19 @@ fun TransactionDayList(
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                 ) {
                     day.entries.forEach { entry ->
-                        HistoryRow(entry, showCategory, onClick = { pickingCode = entry.transaction.code })
+                        // Manual entries open their form (edit or delete); M-Pesa ones can only be re-filed.
+                        HistoryRow(entry, showCategory, onClick = {
+                            if (entry.source.isManual) editingCode = entry.transaction.code else pickingCode = entry.transaction.code
+                        })
                     }
                 }
             }
         }
+    }
+
+    val editingEntry = entries.firstOrNull { it.transaction.code == editingCode }
+    if (editingEntry != null) {
+        AddSpendingSheet(container, editing = editingEntry, onSaved = { _, _ -> editingCode = null }, onDismiss = { editingCode = null })
     }
 
     // Looked up in the live list, so the sheet closes if the transaction leaves it (e.g. re-filed away).
@@ -103,7 +114,8 @@ private fun HistoryRow(entry: StoredTransaction, showCategory: Boolean, onClick:
         Column(Modifier.weight(1f)) {
             Text(describe(entry.transaction), style = MaterialTheme.typography.bodyLarge)
             entry.transaction.occurredAt?.let {
-                Text(timeLabel(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val time = timeLabel(it)
+                Text(if (entry.source.isManual) "$time · ${entry.source.label}" else time, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         if (showCategory) CategoryTag(entry)

@@ -1,6 +1,10 @@
 package com.example.expensetracker.data
 
 import com.example.expensetracker.categorize.Category
+import com.example.expensetracker.manual.ManualEntry
+import com.example.expensetracker.manual.ManualEntryStore
+import com.example.expensetracker.manual.PaymentSource
+import com.example.expensetracker.manual.isManualCode
 import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.MpesaTransactionType
 import com.example.expensetracker.sms.ReceivedSms
@@ -9,13 +13,20 @@ import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class RoomTransactionStore(private val db: AppDatabase) : TransactionStore {
+class RoomTransactionStore(private val db: AppDatabase) : TransactionStore, ManualEntryStore {
 
     override suspend fun insertIfNew(transaction: MpesaTransaction, sms: ReceivedSms): Boolean =
         db.transactions().insert(transaction.toEntity(sms)) != -1L
 
     override suspend fun saveUnparsed(transactionCode: String, sms: ReceivedSms) =
         db.unparsedMessages().insert(UnparsedMessageEntity(transactionCode, sms.body, sms.receivedAt.toString()))
+
+    override suspend fun save(entry: ManualEntry) = db.transactions().upsert(entry.toEntity())
+
+    override suspend fun delete(code: String) {
+        require(isManualCode(code)) { "Only manual entries can be deleted: $code" }
+        db.transactions().deleteManual(code)
+    }
 
     override suspend fun setCategory(transactionCode: String, categoryId: Long) =
         db.transactions().setCategory(transactionCode, categoryId)
@@ -26,17 +37,25 @@ class RoomTransactionStore(private val db: AppDatabase) : TransactionStore {
 
     /** Uncategorized transactions, newest first, updating as they arrive or get filed. */
     fun observeUncategorized(): Flow<List<StoredTransaction>> =
-        db.transactions().observeUncategorized().map { rows -> rows.map { StoredTransaction(it.toTransaction(), null, it.body) } }
+        db.transactions().observeUncategorized().map { rows -> rows.map { StoredTransaction(it.toTransaction(), null, it.body, PaymentSource.valueOf(it.source)) } }
 }
 
-/** A saved transaction with its category (null while it waits to be categorized) and its original SMS. */
-data class StoredTransaction(val transaction: MpesaTransaction, val category: Category?, val originalMessage: String)
+/**
+ * A saved transaction with its category (null while it waits to be categorized), its original SMS
+ * (null for manual entries), and how it was paid.
+ */
+data class StoredTransaction(
+    val transaction: MpesaTransaction,
+    val category: Category?,
+    val originalMessage: String?,
+    val source: PaymentSource,
+)
 
 fun TransactionWithCategory.toStoredTransaction(): StoredTransaction {
     val categoryId = transaction.categoryId
     // The foreign key guarantees a name for every categoryId; a missing one means the query is wrong.
     val category = categoryId?.let { Category(it, checkNotNull(categoryName) { "Category $it has no name" }) }
-    return StoredTransaction(transaction.toTransaction(), category, transaction.body)
+    return StoredTransaction(transaction.toTransaction(), category, transaction.body, PaymentSource.valueOf(transaction.source))
 }
 
 /** A new, uncategorized row. Falls back to the arrival time when the message carried no time of its own. */
@@ -50,6 +69,22 @@ fun MpesaTransaction.toEntity(sms: ReceivedSms) = TransactionEntity(
     reference = reference,
     occurredAt = (occurredAt ?: sms.receivedAt).toString(),
     body = sms.body,
+    source = PaymentSource.MPESA.name,
+)
+
+/** A manual entry's row: already categorized, no SMS, the note standing in as the counterparty. */
+fun ManualEntry.toEntity() = TransactionEntity(
+    code = code,
+    type = MpesaTransactionType.MANUAL.name,
+    amountCents = amountCents,
+    costCents = 0,
+    counterparty = note,
+    phone = null,
+    reference = null,
+    occurredAt = occurredAt.toString(),
+    body = null,
+    source = source.name,
+    categoryId = categoryId,
 )
 
 /** Every stored row has a time, so the result's [MpesaTransaction.occurredAt] is never null. */

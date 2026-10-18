@@ -3,6 +3,7 @@ package com.example.expensetracker.sms
 import com.example.expensetracker.sms.MpesaTransactionType.AIRTIME
 import com.example.expensetracker.sms.MpesaTransactionType.FULIZA_DRAWDOWN
 import com.example.expensetracker.sms.MpesaTransactionType.FULIZA_REPAYMENT
+import com.example.expensetracker.sms.MpesaTransactionType.MANUAL
 import com.example.expensetracker.sms.MpesaTransactionType.PAID
 import com.example.expensetracker.sms.MpesaTransactionType.PAYBILL
 import com.example.expensetracker.sms.MpesaTransactionType.RECEIVED
@@ -58,7 +59,7 @@ object MpesaParser {
         WITHDRAW -> Party(between(text, " from ")?.substringAfter(" - "))
         AIRTIME -> Party("Airtime", AIRTIME_FOR.find(text)?.groupValues?.get(1))
         FULIZA_DRAWDOWN, FULIZA_REPAYMENT -> Party("Fuliza")
-        UNKNOWN -> Party(null)
+        UNKNOWN, MANUAL -> Party(null)
     }
 
     /** Paybill account number or withdrawal agent number. */

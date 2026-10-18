@@ -33,8 +33,8 @@ Built in slices; each one is usable on its own.
 | **5a. Theme, navigation, history** | ✅ | Maroon & Latte (light) and Cocoa Night (dark) themes with a light/dark switch; bottom tabs (To categorize · History · Insights); a history list where any transaction can be re-categorized |
 | **5b. Monthly insights** | ✅ | A month's categorized totals, largest first, with a hand-drawn donut, a month switcher and a count of uncategorized transactions. Category-only for now: money in/out and fees are open questions below. |
 | **5b+. Category drill-down** | ✅ | Tapping a category in Insights (e.g. October › Savings) opens a full screen listing that month's transactions in that category, grouped by day like History. Tapping one opens the usual picker to re-file it or see its original message. Read-only over existing data: nothing new is stored. Donut slices aren't tappable for now (too small to hit reliably). |
-| **5c. Manual add** | ⬜ Next | A **+** button for cash and card spending that never sends an SMS |
-| **5d. Unparsed messages** | ⬜ | A screen listing receipts the parser couldn't read, so they can be checked |
+| **5c. Manual add** | ✅ | Spending that never sends an SMS. A floating "+ Add spending" button on every tab opens a form: amount, optional "what for", paid with Cash / Card / Other, when (defaults to now), and category, picked right there (merchant memory pre-selects it). Saved straight to History and Insights, with no queue or notification; a brief "Saved Ksh450.00 · Food [View]" confirmation shows it worked, since the queue list itself doesn't change. Manual entries can be edited and deleted; M-Pesa entries can only be re-categorized. |
+| **5d. Unparsed messages** | ⬜ Next | A screen listing receipts the parser couldn't read, so they can be checked |
 
 ## Before the first real install
 
@@ -44,7 +44,7 @@ Built in slices; each one is usable on its own.
 | Release build and APK size check | ⬜ | Confirms the shrunk build works and measures the real size |
 | Real-device check (Samsung) | ⬜ | Real Safaricom SMS delivery, notification behaviour, and Samsung's "Never sleeping apps" steps can't be tested on the emulator |
 | **Auto-update** | ⬜ | Must ship in the first installed version, or that version can't update itself. Sideloaded apps can't update silently: Android always asks the user to tap "Install". Likely shape: publish each signed APK as a GitHub Release; the app checks the latest release on open (or daily), and offers "Update available" → download → Android's install prompt. Needs the `INTERNET` permission (the app has none today, a privacy-visible change for a finance app) and `REQUEST_INSTALL_PACKAGES`. Every update must be signed with the same release key. A no-code alternative: Obtainium, a third-party app that watches a GitHub repo's releases and installs updates. |
-| **CI: tests on every push** | ⏳ Workflow added (`.github/workflows/tests.yml`); confirmed by its first run on GitHub | A GitHub Actions workflow running `./gradlew :app:testDebugUnitTest` on push and pull request, on GitHub's machines (no load on the dev Mac). Later it can also build the signed release APK and attach it to a GitHub Release, which is what auto-update would download. |
+| **CI: tests on every push** | ✅ `.github/workflows/tests.yml` runs the unit tests on every push and pull request | A GitHub Actions workflow running `./gradlew :app:testDebugUnitTest` on push and pull request, on GitHub's machines (no load on the dev Mac). Later it can also build the signed release APK and attach it to a GitHub Release, which is what auto-update would download. |
 
 ## Later
 

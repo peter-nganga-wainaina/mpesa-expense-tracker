@@ -44,13 +44,13 @@ import com.example.expensetracker.ui.theme.categoryColor
 /**
  * Bottom sheet for filing one transaction: every category, plus "New category". Shared by the
  * queue (first-time filing) and History (re-filing), where [currentCategoryId] is highlighted.
- * [originalMessage] is the SMS as received, tucked away so filing stays a single tap.
+ * [originalMessage] is the SMS as received (null for manual entries), tucked away so filing stays a single tap.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CategoryPicker(
     transaction: MpesaTransaction,
-    originalMessage: String,
+    originalMessage: String?,
     categories: List<Category>,
     currentCategoryId: Long?,
     onPick: (Category) -> Unit,
@@ -63,7 +63,7 @@ fun CategoryPicker(
         Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 32.dp)) {
             Text(describe(transaction), style = MaterialTheme.typography.titleLarge)
             transaction.occurredAt?.let { Text(formatOccurredAt(it), style = MaterialTheme.typography.bodySmall) }
-            OriginalMessage(originalMessage)
+            originalMessage?.let { OriginalMessage(it) }
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(top = 16.dp),
@@ -130,8 +130,9 @@ fun CategoryDot(category: Category, modifier: Modifier = Modifier) {
     Box(modifier.size(10.dp).background(categoryColor(category.id), CircleShape))
 }
 
+/** Asks for a new category's name, rejecting blanks and names that already exist (in any case). */
 @Composable
-private fun NewCategoryDialog(existing: List<Category>, onAdd: (name: String) -> Unit, onDismiss: () -> Unit) {
+fun NewCategoryDialog(existing: List<Category>, onAdd: (name: String) -> Unit, onDismiss: () -> Unit) {
     var input by rememberSaveable { mutableStateOf("") }
     val validation = validateNewCategoryName(input, existing)
 

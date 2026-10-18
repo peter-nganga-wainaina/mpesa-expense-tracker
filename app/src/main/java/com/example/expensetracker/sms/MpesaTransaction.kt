@@ -14,6 +14,9 @@ enum class MpesaTransactionType {
 
     /** Has a transaction code and an amount, but no known type keyword: likely a new M-Pesa format. */
     UNKNOWN,
+
+    /** Added by hand (cash, card, other) rather than read from an SMS; the parser never produces it. */
+    MANUAL,
 }
 
 data class MpesaTransaction(

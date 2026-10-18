@@ -4,6 +4,7 @@ import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.MpesaTransactionType.AIRTIME
 import com.example.expensetracker.sms.MpesaTransactionType.FULIZA_DRAWDOWN
 import com.example.expensetracker.sms.MpesaTransactionType.FULIZA_REPAYMENT
+import com.example.expensetracker.sms.MpesaTransactionType.MANUAL
 import com.example.expensetracker.sms.MpesaTransactionType.PAID
 import com.example.expensetracker.sms.MpesaTransactionType.PAYBILL
 import com.example.expensetracker.sms.MpesaTransactionType.RECEIVED
@@ -29,6 +30,7 @@ fun describe(transaction: MpesaTransaction): String {
         FULIZA_DRAWDOWN -> "$amount borrowed from Fuliza"
         FULIZA_REPAYMENT -> "$amount Fuliza repayment"
         UNKNOWN -> "$amount M-Pesa transaction"
+        MANUAL -> if (transaction.counterparty == null) "$amount added by hand" else "$amount · ${transaction.counterparty}"
     }
 }
 

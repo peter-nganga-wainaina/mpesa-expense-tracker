@@ -74,7 +74,7 @@ fun InsightsScreen(container: AppContainer, onOpenQueue: () -> Unit, modifier: M
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
-            .padding(bottom = 24.dp),
+            .padding(bottom = 96.dp), // clear of the floating "Add spending" button
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text("Insights", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 16.dp))

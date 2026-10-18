@@ -2,6 +2,7 @@ package com.example.expensetracker.insights
 
 import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.data.StoredTransaction
+import com.example.expensetracker.manual.PaymentSource
 import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.MpesaTransactionType.PAID
 import java.time.LocalDateTime
@@ -33,6 +34,7 @@ class MonthSummaryTest {
         ),
         category = category,
         originalMessage = "",
+        source = PaymentSource.MPESA,
     )
 
     @Test

@@ -1,6 +1,8 @@
 package com.example.expensetracker.data
 
 import com.example.expensetracker.categorize.Category
+import com.example.expensetracker.manual.ManualEntry
+import com.example.expensetracker.manual.PaymentSource
 import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.MpesaTransactionType.SENT
 import com.example.expensetracker.sms.ReceivedSms
@@ -77,6 +79,26 @@ class TransactionEntityTest {
         val row = TransactionWithCategory(transaction().toEntity(sms), categoryName = null)
 
         assertEquals(sms.body, row.toStoredTransaction().originalMessage)
+    }
+
+    @Test
+    fun `an M-Pesa transaction is stored as paid by M-Pesa`() {
+        val row = TransactionWithCategory(transaction().toEntity(sms), categoryName = null)
+
+        assertEquals(PaymentSource.MPESA, row.toStoredTransaction().source)
+    }
+
+    @Test
+    fun `a manual entry reads back with its source, note and category, and no SMS`() {
+        val entry = ManualEntry("MANUAL-1", 45000, "Mama Mboga", PaymentSource.CASH, receivedAt, categoryId = 3)
+
+        val stored = TransactionWithCategory(entry.toEntity(), categoryName = "Food").toStoredTransaction()
+
+        assertEquals(PaymentSource.CASH, stored.source)
+        assertEquals(Category(3, "Food"), stored.category)
+        assertEquals("Mama Mboga", stored.transaction.counterparty)
+        assertEquals(45000L, stored.transaction.amountCents)
+        assertNull(stored.originalMessage)
     }
 
     private fun transaction(occurredAt: LocalDateTime? = null) = MpesaTransaction(

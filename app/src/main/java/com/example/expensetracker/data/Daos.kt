@@ -5,6 +5,7 @@ import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -25,6 +26,14 @@ interface TransactionDao {
         """
     )
     fun observeHistory(): Flow<List<TransactionWithCategory>>
+
+    /** Adds or replaces a manual entry. M-Pesa rows only ever go through [insert]. */
+    @Upsert
+    suspend fun upsert(transaction: TransactionEntity)
+
+    /** Deletes a manual entry; the source check makes it impossible to delete an M-Pesa transaction. */
+    @Query("DELETE FROM transactions WHERE code = :code AND source != 'MPESA'")
+    suspend fun deleteManual(code: String): Int
 
     @Query("UPDATE transactions SET categoryId = :categoryId WHERE code = :code")
     suspend fun setCategory(code: String, categoryId: Long)
