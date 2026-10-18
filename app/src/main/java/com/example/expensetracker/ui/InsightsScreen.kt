@@ -16,6 +16,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -36,20 +39,24 @@ import androidx.compose.ui.unit.sp
 import com.example.expensetracker.AppContainer
 import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.insights.CategoryTotal
+import com.example.expensetracker.insights.Direction
 import com.example.expensetracker.insights.MonthSummary
 import com.example.expensetracker.insights.canGoBack
 import com.example.expensetracker.insights.canGoForward
 import com.example.expensetracker.insights.earliestMonth
+import com.example.expensetracker.insights.netCents
 import com.example.expensetracker.insights.summarize
 import com.example.expensetracker.notify.formatKsh
+import com.example.expensetracker.notify.formatNetKsh
 import com.example.expensetracker.ui.theme.categoryColor
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * A month's categorized totals: a donut, then each category largest first. Tapping a category shows
- * the transactions behind its total. [onOpenQueue] goes to the queue.
+ * A month's categorized totals, money out or money in: a donut, then each category largest first, and
+ * the month's net. Tapping a category shows the transactions behind its total. [onOpenQueue] goes to
+ * the queue.
  */
 @Composable
 fun InsightsScreen(container: AppContainer, onOpenQueue: () -> Unit, modifier: Modifier = Modifier) {
@@ -59,15 +66,18 @@ fun InsightsScreen(container: AppContainer, onOpenQueue: () -> Unit, modifier: M
     // YearMonth isn't saveable as-is; its ISO text ("2026-10") is.
     var monthText by rememberSaveable { mutableStateOf(current.toString()) }
     var openCategoryId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var directionName by rememberSaveable { mutableStateOf(Direction.OUT.name) }
     val month = YearMonth.parse(monthText)
+    val direction = Direction.valueOf(directionName)
     val transactions = history ?: return
-    val summary = remember(transactions, month) { summarize(month, transactions) }
+    val summary = remember(transactions, month, direction) { summarize(month, direction, transactions) }
+    val net = remember(transactions, month) { netCents(month, transactions) }
     val earliest = remember(transactions) { earliestMonth(transactions) }
 
     // Looked up by id so the detail stays open even after its last transaction is re-filed elsewhere.
     val openCategory = openCategoryId?.let { id -> categories.firstOrNull { it.id == id } }
     if (openCategory != null) {
-        CategoryDetailScreen(container, month, openCategory, transactions, onBack = { openCategoryId = null }, modifier = modifier)
+        CategoryDetailScreen(container, month, direction, openCategory, transactions, onBack = { openCategoryId = null }, modifier = modifier)
         return
     }
 
@@ -86,7 +96,9 @@ fun InsightsScreen(container: AppContainer, onOpenQueue: () -> Unit, modifier: M
             onBack = { monthText = month.minusMonths(1).toString() },
             onForward = { monthText = month.plusMonths(1).toString() },
         )
-        TotalCard(summary)
+        DirectionSwitch(direction, onChange = { directionName = it.name })
+        TotalCard(summary, direction)
+        NetRow(net)
         if (summary.categories.isNotEmpty()) CategoryList(summary.categories, onOpen = { openCategoryId = it.id })
         if (summary.uncategorizedCount > 0) UncategorizedNote(summary.uncategorizedCount, onOpenQueue)
     }
@@ -107,9 +119,24 @@ private fun MonthSwitcher(month: YearMonth, canGoBack: Boolean, canGoForward: Bo
     }
 }
 
+/** Transfers (withdrawals) have no view of their own: they count in neither. */
+@Composable
+private fun DirectionSwitch(direction: Direction, onChange: (Direction) -> Unit) {
+    val options = listOf(Direction.OUT, Direction.IN)
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, option ->
+            SegmentedButton(
+                selected = direction == option,
+                onClick = { onChange(option) },
+                shape = SegmentedButtonDefaults.itemShape(index, options.size),
+            ) { Text(option.label) }
+        }
+    }
+}
+
 /** The maroon card: donut with the month's total in the middle. */
 @Composable
-private fun TotalCard(summary: MonthSummary) {
+private fun TotalCard(summary: MonthSummary, direction: Direction) {
     val colors = MaterialTheme.colorScheme
     Column(
         Modifier
@@ -119,7 +146,7 @@ private fun TotalCard(summary: MonthSummary) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val description = if (summary.categories.isEmpty()) {
-            "No categorized transactions this month"
+            "No categorized ${direction.label.lowercase()} this month"
         } else {
             summary.categories.joinToString(prefix = "Breakdown: ") { "${it.category.name} ${it.percent}%" }
         }
@@ -129,7 +156,7 @@ private fun TotalCard(summary: MonthSummary) {
             description = description,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Total", style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
+                Text(direction.label, style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
                 // Shrinks to fit inside the ring, so a big month never spills over it.
                 BasicText(
                     formatKsh(summary.totalCents),
@@ -142,7 +169,7 @@ private fun TotalCard(summary: MonthSummary) {
         }
         if (summary.categories.isEmpty()) {
             Text(
-                "Nothing categorized this month yet.",
+                "No ${direction.label.lowercase()} categorized this month yet.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.onPrimaryContainer,
                 modifier = Modifier.padding(top = 16.dp),
@@ -195,6 +222,15 @@ private fun CategoryList(totals: List<CategoryTotal>, onOpen: (Category) -> Unit
     }
 }
 
+/** Money in minus money out, the same whichever view is showing. */
+@Composable
+private fun NetRow(netCents: Long) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("Net this month", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text(formatNetKsh(netCents), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+    }
+}
+
 /** Totals leave these out, so say how many and offer a way to file them. */
 @Composable
 private fun UncategorizedNote(count: Int, onOpenQueue: () -> Unit) {
@@ -213,5 +249,13 @@ private fun UncategorizedNote(count: Int, onOpenQueue: () -> Unit) {
         Text("Categorize ›", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
     }
 }
+
+/** Shown on the Insights switch and the category screen. */
+internal val Direction.label: String
+    get() = when (this) {
+        Direction.OUT -> "Money out"
+        Direction.IN -> "Money in"
+        Direction.TRANSFER -> error("Transfers have no view of their own")
+    }
 
 private val MONTH_LABEL = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)

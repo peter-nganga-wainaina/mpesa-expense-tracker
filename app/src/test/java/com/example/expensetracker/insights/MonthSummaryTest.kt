@@ -4,7 +4,10 @@ import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.data.StoredTransaction
 import com.example.expensetracker.manual.PaymentSource
 import com.example.expensetracker.sms.MpesaTransaction
+import com.example.expensetracker.sms.MpesaTransactionType
 import com.example.expensetracker.sms.MpesaTransactionType.PAID
+import com.example.expensetracker.sms.MpesaTransactionType.RECEIVED
+import com.example.expensetracker.sms.MpesaTransactionType.WITHDRAW
 import java.time.LocalDateTime
 import java.time.YearMonth
 import org.junit.Assert.assertEquals
@@ -21,10 +24,10 @@ class MonthSummaryTest {
     private val october = YearMonth.of(2026, 10)
     private var nextCode = 0
 
-    private fun stored(cents: Long, category: Category?, day: Int = 10, month: Int = 10) = StoredTransaction(
+    private fun stored(cents: Long, category: Category?, day: Int = 10, month: Int = 10, type: MpesaTransactionType = PAID) = StoredTransaction(
         transaction = MpesaTransaction(
             code = "TX%08d".format(nextCode++),
-            type = PAID,
+            type = type,
             amountCents = cents,
             costCents = 0,
             counterparty = "SHOP",
@@ -39,7 +42,7 @@ class MonthSummaryTest {
 
     @Test
     fun `amounts are totaled per category`() {
-        val summary = summarize(october, listOf(stored(100_00, food), stored(250_00, food), stored(80_00, transport)))
+        val summary = summarize(october, Direction.OUT, listOf(stored(100_00, food), stored(250_00, food), stored(80_00, transport)))
 
         assertEquals(listOf(350_00L, 80_00L), summary.categories.map { it.totalCents })
         assertEquals(430_00L, summary.totalCents)
@@ -47,7 +50,7 @@ class MonthSummaryTest {
 
     @Test
     fun `categories are listed largest first`() {
-        val summary = summarize(october, listOf(stored(50_00, food), stored(900_00, bills), stored(300_00, transport)))
+        val summary = summarize(october, Direction.OUT, listOf(stored(50_00, food), stored(900_00, bills), stored(300_00, transport)))
 
         assertEquals(listOf("Bills", "Transport", "Food"), summary.categories.map { it.category.name })
     }
@@ -56,6 +59,7 @@ class MonthSummaryTest {
     fun `only the chosen month counts`() {
         val summary = summarize(
             october,
+            Direction.OUT,
             listOf(stored(100_00, food, day = 31, month = 10), stored(999_00, food, day = 1, month = 11), stored(5_00, food, day = 30, month = 9)),
         )
 
@@ -64,30 +68,51 @@ class MonthSummaryTest {
 
     @Test
     fun `uncategorized transactions are counted but not added to the total`() {
-        val summary = summarize(october, listOf(stored(100_00, food), stored(500_00, null), stored(70_00, null)))
+        val summary = summarize(october, Direction.OUT, listOf(stored(100_00, food), stored(500_00, null), stored(70_00, null)))
 
         assertEquals(2, summary.uncategorizedCount)
         assertEquals(100_00L, summary.totalCents)
     }
 
     @Test
+    fun `each direction totals only its own transactions`() {
+        val month = listOf(stored(100_00, food), stored(2_000_00, bills, type = RECEIVED), stored(500_00, transport, type = WITHDRAW))
+
+        assertEquals(listOf("Food"), summarize(october, Direction.OUT, month).categories.map { it.category.name })
+        assertEquals(listOf("Bills"), summarize(october, Direction.IN, month).categories.map { it.category.name })
+    }
+
+    @Test
+    fun `net is money in minus money out, leaving out transfers and uncategorized transactions`() {
+        val month = listOf(
+            stored(300_00, food),
+            stored(1_000_00, bills, type = RECEIVED),
+            stored(500_00, transport, type = WITHDRAW),
+            stored(40_00, null),
+            stored(60_00, null, type = RECEIVED),
+        )
+
+        assertEquals(700_00L, netCents(october, month))
+    }
+
+    @Test
     fun `percentages add up to exactly 100`() {
         // Thirds don't round evenly: naive rounding would show 33 + 33 + 33 = 99.
-        val summary = summarize(october, listOf(stored(100_00, food), stored(100_00, transport), stored(100_00, bills)))
+        val summary = summarize(october, Direction.OUT, listOf(stored(100_00, food), stored(100_00, transport), stored(100_00, bills)))
 
         assertEquals(100, summary.categories.sumOf { it.percent })
     }
 
     @Test
     fun `each percentage reflects its share`() {
-        val summary = summarize(october, listOf(stored(750_00, food), stored(250_00, transport)))
+        val summary = summarize(october, Direction.OUT, listOf(stored(750_00, food), stored(250_00, transport)))
 
         assertEquals(listOf(75, 25), summary.categories.map { it.percent })
     }
 
     @Test
     fun `a month with nothing in it is empty`() {
-        val summary = summarize(october, emptyList())
+        val summary = summarize(october, Direction.OUT, emptyList())
 
         assertTrue(summary.categories.isEmpty())
         assertEquals(0L, summary.totalCents)

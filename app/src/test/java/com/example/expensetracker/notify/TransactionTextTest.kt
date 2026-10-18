@@ -24,6 +24,13 @@ class TransactionTextTest {
     }
 
     @Test
+    fun `a net amount shows its sign, with zero unsigned`() {
+        assertEquals("+Ksh700.00", formatNetKsh(70000))
+        assertEquals("−Ksh1,009.49", formatNetKsh(-100949))
+        assertEquals("Ksh0.00", formatNetKsh(0))
+    }
+
+    @Test
     fun `shows when a transaction happened as day, month and 12-hour time`() {
         assertEquals("13 Oct, 10:40 PM", formatOccurredAt(LocalDateTime.of(2026, 10, 13, 22, 40)))
         assertEquals("4 Dec, 8:07 AM", formatOccurredAt(LocalDateTime.of(2025, 12, 4, 8, 7)))

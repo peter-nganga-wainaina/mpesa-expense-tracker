@@ -7,7 +7,9 @@ import com.example.expensetracker.data.TransactionEntity
 import com.example.expensetracker.data.TransactionWithCategory
 import com.example.expensetracker.data.toEntity
 import com.example.expensetracker.data.toStoredTransaction
+import com.example.expensetracker.insights.Direction
 import com.example.expensetracker.insights.MonthSummary
+import com.example.expensetracker.insights.netCents
 import com.example.expensetracker.insights.summarize
 import com.example.expensetracker.manual.FormCheck
 import com.example.expensetracker.manual.ManualEntry
@@ -36,7 +38,7 @@ import org.junit.Test
 class MoneyScenarioTest {
 
     private val october = YearMonth.of(2026, 10)
-    private val phone = Phone("Food", "Transport", "Other")
+    private val phone = Phone("Food", "Transport", "Other", "Fuliza", "Savings")
 
     @Test
     fun `cash added by hand counts alongside M-Pesa spending`() {
@@ -44,7 +46,7 @@ class MoneyScenarioTest {
         phone.file("TQ1A2B3C4D", "Food")
         phone.addCash("450", "Mama Mboga", "Food", at = LocalDateTime.of(2026, 10, 18, 9, 0))
 
-        assertEquals(mapOf("Food" to 950_00L), phone.totals(october))
+        assertEquals(mapOf("Food" to 950_00L), phone.moneyOut(october))
     }
 
     @Test
@@ -52,7 +54,7 @@ class MoneyScenarioTest {
         val code = phone.addCash("450", "Mama Mboga", "Food", at = LocalDateTime.of(2026, 10, 18, 9, 0))
         phone.deleteManual(code)
 
-        assertEquals(emptyMap<String, Long>(), phone.totals(october))
+        assertEquals(emptyMap<String, Long>(), phone.moneyOut(october))
     }
 
     @Test
@@ -64,7 +66,7 @@ class MoneyScenarioTest {
         phone.addFromMessage(message, "450", "Other")
         phone.addFromMessage(message, "480", "Other")
 
-        assertEquals(mapOf("Other" to 480_00L), phone.totals(october))
+        assertEquals(mapOf("Other" to 480_00L), phone.moneyOut(october))
     }
 
     @Test
@@ -74,8 +76,8 @@ class MoneyScenarioTest {
         phone.file("TQ1A2B3C4D", "Food")
         phone.file("TQ2B3C4D5E", "Food")
 
-        assertEquals(mapOf("Food" to 500_00L), phone.totals(october))
-        assertEquals(mapOf("Food" to 300_00L), phone.totals(YearMonth.of(2026, 11)))
+        assertEquals(mapOf("Food" to 500_00L), phone.moneyOut(october))
+        assertEquals(mapOf("Food" to 300_00L), phone.moneyOut(YearMonth.of(2026, 11)))
     }
 
     @Test
@@ -86,7 +88,7 @@ class MoneyScenarioTest {
         )
         phone.file("TQ3C4D5E6F", "Other")
 
-        assertEquals(mapOf("Other" to 1_100_00L), phone.totals(october))
+        assertEquals(mapOf("Other" to 1_100_00L), phone.moneyOut(october))
     }
 
     @Test
@@ -96,9 +98,60 @@ class MoneyScenarioTest {
             "TQ4D5E6F7G Confirmed. Fuliza M-PESA amount is Ksh 948.44. Access Fee charged Ksh 9.49. " +
                 "Total Fuliza M-PESA outstanding amount is Ksh 957.93 due on 29/11/26."
         )
-        phone.file("TQ4D5E6F7G", "Other")
+        phone.file("TQ4D5E6F7G", "Fuliza")
 
-        assertEquals(mapOf("Other" to 948_44L), phone.totals(october))
+        assertEquals(mapOf("Fuliza" to 948_44L), phone.moneyIn(october))
+    }
+
+    @Test
+    fun `paying with Fuliza and repaying it nets to what actually left, the payment plus the fee`() {
+        // Ksh51.56 on hand; Fuliza lends the other Ksh948.44 and charges Ksh9.49. Wording from mpesa_samples/fuliza.txt.
+        phone.receive(paid(code = "TQ5E6F7G8H", ksh = "1,000.00", to = "SUNRISE CAFE"))
+        phone.receive(
+            "TQ6F7G8H9J Confirmed. Fuliza M-PESA amount is Ksh 948.44. Access Fee charged Ksh 9.49. " +
+                "Total Fuliza M-PESA outstanding amount is Ksh 957.93 due on 17/11/26."
+        )
+        phone.receive(
+            "TQ7G8H9J1K  Confirmed. Ksh 957.93 from your M-PESA has been used to fully pay your outstanding Fuliza M-PESA. " +
+                "Available Fuliza M-PESA limit is Ksh 2000.00. M-PESA balance is Ksh50.00."
+        )
+        phone.file("TQ5E6F7G8H", "Food")
+        phone.file("TQ6F7G8H9J", "Fuliza")
+        phone.file("TQ7G8H9J1K", "Fuliza")
+
+        assertEquals(mapOf("Food" to 1_000_00L, "Fuliza" to 957_93L), phone.moneyOut(october))
+        assertEquals(mapOf("Fuliza" to 948_44L), phone.moneyIn(october))
+        assertEquals(-1_009_49L, phone.net(october))
+    }
+
+    @Test
+    fun `a withdrawal is a transfer, so cash spent from it counts once`() {
+        // Wording from mpesa_samples/withdraw.txt.
+        phone.receive(
+            "TQ8H9J1K2L Confirmed.on 18/10/26 at 8:37 AMWithdraw Ksh2,000.00 from 100001 - SAMPLE AGENT SHOP MAIN RD " +
+                "New M-PESA balance is Ksh19,000.00. Transaction cost, Ksh29.00."
+        )
+        phone.file("TQ8H9J1K2L", "Other")
+        phone.addCash("450", "Mama Mboga", "Food", at = LocalDateTime.of(2026, 10, 18, 9, 0))
+
+        assertEquals(mapOf("Food" to 450_00L), phone.moneyOut(october))
+        assertEquals(emptyMap<String, Long>(), phone.moneyIn(october))
+    }
+
+    @Test
+    fun `money into and out of one category is counted on each side, not offset`() {
+        // Wording from mpesa_samples/sent.txt and received.txt.
+        phone.receive(
+            "TQ9J1K2L3M Confirmed. Ksh500.00 sent to ALICE  MWANGI 0700000001 on 3/10/26 at 8:07 AM. " +
+                "New M-PESA balance is Ksh25,000.00. Transaction cost, Ksh7.00."
+        )
+        phone.receive("TR1K2L3M4N Confirmed.You have received Ksh200.00 from ZIIDI on 20/10/26 5:06 PM. New M-PESA balance is Ksh14,000.00.")
+        phone.file("TQ9J1K2L3M", "Savings")
+        phone.file("TR1K2L3M4N", "Savings")
+
+        assertEquals(mapOf("Savings" to 500_00L), phone.moneyOut(october))
+        assertEquals(mapOf("Savings" to 200_00L), phone.moneyIn(october))
+        assertEquals(-300_00L, phone.net(october))
     }
 
     // Wording follows the anonymized samples in mpesa_samples/paid.txt.
@@ -147,11 +200,18 @@ private class Phone(vararg categoryNames: String) : TransactionStore, ManualEntr
 
     fun deleteManual(code: String) = runBlocking { delete(code) }
 
-    fun summary(month: YearMonth): MonthSummary = summarize(month, ledger())
+    fun summary(month: YearMonth, direction: Direction): MonthSummary = summarize(month, direction, ledger())
 
-    /** Category name to total cents, as Insights lists them. */
-    fun totals(month: YearMonth): Map<String, Long> =
-        summary(month).categories.associate { it.category.name to it.totalCents }
+    /** Category name to total cents, as Insights' Money out view lists them. */
+    fun moneyOut(month: YearMonth): Map<String, Long> = totals(month, Direction.OUT)
+
+    /** Category name to total cents, as Insights' Money in view lists them. */
+    fun moneyIn(month: YearMonth): Map<String, Long> = totals(month, Direction.IN)
+
+    fun net(month: YearMonth): Long = netCents(month, ledger())
+
+    private fun totals(month: YearMonth, direction: Direction) =
+        summary(month, direction).categories.associate { it.category.name to it.totalCents }
 
     private fun ledger(): List<StoredTransaction> = rows.values.map { row ->
         TransactionWithCategory(row, categories.firstOrNull { it.id == row.categoryId }?.name).toStoredTransaction()

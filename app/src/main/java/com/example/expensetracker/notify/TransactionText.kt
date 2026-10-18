@@ -37,6 +37,13 @@ fun describe(transaction: MpesaTransaction): String {
 /** 110000 -> "Ksh1,100.00", matching how M-Pesa writes amounts. */
 fun formatKsh(cents: Long): String = "Ksh" + KSH_FORMAT.format(cents.toBigDecimal().movePointLeft(2))
 
+/** "+Ksh700.00" or "−Ksh1,009.49" (a true minus sign, which reads better than a hyphen). */
+fun formatNetKsh(cents: Long): String = when {
+    cents > 0 -> "+" + formatKsh(cents)
+    cents < 0 -> "−" + formatKsh(-cents)
+    else -> formatKsh(0)
+}
+
 /** "13 Oct, 10:40 PM". English month names, matching the app's English UI whatever the phone's locale. */
 fun formatOccurredAt(time: LocalDateTime): String = OCCURRED_AT_FORMAT.format(time)
 

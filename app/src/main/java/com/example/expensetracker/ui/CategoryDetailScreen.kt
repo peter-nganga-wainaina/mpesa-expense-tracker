@@ -21,6 +21,7 @@ import com.example.expensetracker.AppContainer
 import com.example.expensetracker.R
 import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.data.StoredTransaction
+import com.example.expensetracker.insights.Direction
 import com.example.expensetracker.insights.transactionsIn
 import com.example.expensetracker.notify.formatKsh
 import java.time.YearMonth
@@ -28,20 +29,21 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * What makes up one category's total for a month, e.g. October › Savings. Updates live: re-filing a
+ * What makes up one category's money out or money in for a month, e.g. October › Savings. Updates live: re-filing a
  * transaction elsewhere takes it off this list.
  */
 @Composable
 fun CategoryDetailScreen(
     container: AppContainer,
     month: YearMonth,
+    direction: Direction,
     category: Category,
     allTransactions: List<StoredTransaction>,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BackHandler(onBack = onBack)
-    val entries = remember(allTransactions, month, category.id) { transactionsIn(month, category.id, allTransactions) }
+    val entries = remember(allTransactions, month, direction, category.id) { transactionsIn(month, direction, category.id, allTransactions) }
     val total = entries.sumOf { it.transaction.amountCents }
 
     Column(modifier.padding(horizontal = 16.dp)) {
@@ -55,7 +57,7 @@ fun CategoryDetailScreen(
                     Text(category.name, style = MaterialTheme.typography.headlineSmall)
                 }
                 Text(
-                    "${MONTH.format(month)} · ${formatKsh(total)} · ${countLabel(entries.size)}",
+                    "${MONTH.format(month)} · ${direction.label} ${formatKsh(total)} · ${countLabel(entries.size)}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

@@ -19,13 +19,14 @@ data class MonthSummary(
 )
 
 /**
- * Totals the transaction amounts of [month] by category. Fees are not included: they are recorded
- * separately and whether to show them is a later decision.
+ * Totals the [direction] transaction amounts of [month] by category. Fees are not included: they are
+ * recorded separately and whether to show them is a later decision. The uncategorized count covers
+ * every direction, since anything waiting in the queue could belong to either side.
  */
-fun summarize(month: YearMonth, transactions: List<StoredTransaction>): MonthSummary {
-    // Stored transactions always have a time: the arrival time stands in when the SMS has none.
-    val inMonth = transactions.filter { YearMonth.from(checkNotNull(it.transaction.occurredAt)) == month }
+fun summarize(month: YearMonth, direction: Direction, transactions: List<StoredTransaction>): MonthSummary {
+    val inMonth = transactions.filter { it.isIn(month) }
     val totals = inMonth
+        .filter { it.direction == direction }
         .mapNotNull { stored -> stored.category?.let { it to stored.transaction.amountCents } }
         .groupBy({ it.first }, { it.second })
         .mapValues { (_, amounts) -> amounts.sum() }
@@ -40,6 +41,16 @@ fun summarize(month: YearMonth, transactions: List<StoredTransaction>): MonthSum
         uncategorizedCount = inMonth.count { it.category == null },
     )
 }
+
+/**
+ * Money in minus money out for [month]: the difference of the two totals Insights shows, so it adds up
+ * on screen. Like them, it leaves out uncategorized transactions; transfers count in neither.
+ */
+fun netCents(month: YearMonth, transactions: List<StoredTransaction>): Long =
+    summarize(month, Direction.IN, transactions).totalCents - summarize(month, Direction.OUT, transactions).totalCents
+
+// Stored transactions always have a time: the arrival time stands in when the SMS has none.
+internal fun StoredTransaction.isIn(month: YearMonth): Boolean = YearMonth.from(checkNotNull(transaction.occurredAt)) == month
 
 /**
  * Whole-number percentages that always add up to exactly 100 (largest remainder method), so the
