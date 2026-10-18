@@ -3,23 +3,29 @@ package com.example.expensetracker
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.graphics.Color
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.example.expensetracker.sms.DailySweepWorker
-import com.example.expensetracker.ui.QueueScreen
+import com.example.expensetracker.ui.AppShell
 import com.example.expensetracker.ui.SetupScreen
 import com.example.expensetracker.ui.theme.ExpenseTrackerTheme
+import com.example.expensetracker.ui.theme.ThemeMode
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private val container by lazy { AppContainer(this) }
     private var setupComplete by mutableStateOf(false)
+    private var themeMode by mutableStateOf(ThemeMode.SYSTEM)
 
     /** A transaction whose picker should open, set when the user arrives from its notification. */
     private var requestedCode by mutableStateOf<String?>(null)
@@ -29,11 +35,27 @@ class MainActivity : ComponentActivity() {
         // Only on a fresh start: after rotation the picker's own state already says what's open.
         if (savedInstanceState == null) requestedCode = intent.getStringExtra(EXTRA_TRANSACTION_CODE)
         setupComplete = container.setup.isComplete
-        enableEdgeToEdge()
+        themeMode = container.themePreference.mode
         setContent {
-            ExpenseTrackerTheme {
+            val showingDark = themeMode.isDark(systemIsDark = isSystemInDarkTheme())
+            // Status and navigation bar icons follow the app's theme, not the phone's, so they stay
+            // readable when she picks the opposite of her phone's setting.
+            LaunchedEffect(showingDark) {
+                val bars = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { showingDark }
+                enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
+            }
+            ExpenseTrackerTheme(darkTheme = showingDark) {
                 if (setupComplete) {
-                    QueueScreen(container, requestedCode, onRequestHandled = { requestedCode = null })
+                    AppShell(
+                        container,
+                        requestedCode,
+                        onRequestHandled = { requestedCode = null },
+                        showingDark = showingDark,
+                        onToggleTheme = {
+                            themeMode = ThemeMode.toggledFrom(showingDark)
+                            container.themePreference.mode = themeMode
+                        },
+                    )
                 } else {
                     SetupScreen(container, onFinished = {
                         container.setup.markComplete()

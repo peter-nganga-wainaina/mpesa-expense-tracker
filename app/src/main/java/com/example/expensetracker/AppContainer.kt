@@ -6,6 +6,7 @@ import com.example.expensetracker.data.AppDatabase
 import com.example.expensetracker.data.RoomCategoryStore
 import com.example.expensetracker.data.RoomTransactionStore
 import com.example.expensetracker.data.SetupState
+import com.example.expensetracker.data.ThemePreference
 import com.example.expensetracker.notify.CategoryPrompt
 import com.example.expensetracker.sms.InboxBackfill
 import com.example.expensetracker.sms.SmsInbox
@@ -30,4 +31,5 @@ class AppContainer(context: Context) {
     val categorizer = Categorizer(transactions, notifier)
     val backfill = InboxBackfill(SmsInbox(app), ingest, now = LocalDateTime::now)
     val setup = SetupState(app)
+    val themePreference = ThemePreference(app)
 }

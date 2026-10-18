@@ -29,8 +29,8 @@ Built in slices; each one is usable on its own.
 
 | Slice | Status | What it delivers |
 |---|---|---|
-| **5a. Theme, navigation, history** | ⬜ Next | Maroon & Latte (light) and Cocoa Night (dark) themes with a light/dark switch; bottom tabs (To categorize · History · Insights); a history list where any transaction can be re-categorized |
-| **5b. Monthly insights** | ⬜ | A month's totals broken down by category; hand-drawn donut chart; month switcher. Depends on the first open question below. |
+| **5a. Theme, navigation, history** | ✅ | Maroon & Latte (light) and Cocoa Night (dark) themes with a light/dark switch; bottom tabs (To categorize · History · Insights); a history list where any transaction can be re-categorized |
+| **5b. Monthly insights** | ⬜ Next | A month's totals broken down by category; hand-drawn donut chart; month switcher. Depends on the first open question below. |
 | **5c. Manual add** | ⬜ | A **+** button for cash and card spending that never sends an SMS |
 | **5d. Unparsed messages** | ⬜ | A screen listing receipts the parser couldn't read, so they can be checked |
 
@@ -53,7 +53,7 @@ Built in slices; each one is usable on its own.
 | **Import older messages** | A settings option to pull in history beyond the first import. Reuses the backfill; duplicates are skipped by transaction code. |
 | **Uncategorized reminder** | A gentle "3 transactions waiting" nudge if items sit uncategorized for a day or so |
 | **Model-based suggestions** | For merchants with no history; on-device first, since this is financial data. Suggests only, never assigns. |
-| **Keep the raw SMS text** | Lets transactions be re-parsed if the parser improves. Needs a database migration once real data exists. |
+| **Keep the raw SMS text, and show it** | Save each transaction's full message. Tapping a transaction shows it under an "Original message" section in the picker (collapsed by default), so the user can check what the app read, plus details it doesn't show (balance, fee, account number). Also keeps receipts if the SMS app is cleared, and lets old transactions be re-parsed if the parser improves. ~200 bytes per message. **Cheapest before the first real install:** until then it's an in-place schema change; afterwards it needs a migration, and transactions saved before it have no message to show. |
 
 ## Open questions
 

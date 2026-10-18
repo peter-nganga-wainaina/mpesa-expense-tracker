@@ -1,6 +1,7 @@
 package com.example.expensetracker.data
 
 import androidx.room.Dao
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -15,6 +16,16 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE categoryId IS NULL ORDER BY occurredAt DESC")
     fun observeUncategorized(): Flow<List<TransactionEntity>>
 
+    /** Every transaction with its category's name (null if uncategorized), newest first. */
+    @Query(
+        """
+        SELECT transactions.*, categories.name AS categoryName FROM transactions
+        LEFT JOIN categories ON categories.id = transactions.categoryId
+        ORDER BY transactions.occurredAt DESC
+        """
+    )
+    fun observeHistory(): Flow<List<TransactionWithCategory>>
+
     @Query("UPDATE transactions SET categoryId = :categoryId WHERE code = :code")
     suspend fun setCategory(code: String, categoryId: Long)
 
@@ -23,6 +34,8 @@ interface TransactionDao {
 }
 
 data class CategoryUse(val categoryId: Long, val uses: Int)
+
+data class TransactionWithCategory(@Embedded val transaction: TransactionEntity, val categoryName: String?)
 
 @Dao
 interface CategoryDao {

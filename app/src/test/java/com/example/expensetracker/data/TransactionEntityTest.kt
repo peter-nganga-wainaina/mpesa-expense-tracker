@@ -1,5 +1,6 @@
 package com.example.expensetracker.data
 
+import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.MpesaTransactionType.SENT
 import java.time.LocalDateTime
@@ -53,6 +54,20 @@ class TransactionEntityTest {
     @Test
     fun `a transaction stored without its own time reads back with the arrival time`() {
         assertEquals(receivedAt, transaction(occurredAt = null).toEntity(receivedAt).toTransaction().occurredAt)
+    }
+
+    @Test
+    fun `an uncategorized transaction appears in history without a category`() {
+        val row = TransactionWithCategory(transaction().toEntity(receivedAt), categoryName = null)
+
+        assertNull(row.toHistoryItem().category)
+    }
+
+    @Test
+    fun `a categorized transaction appears in history with its category`() {
+        val entity = transaction().toEntity(receivedAt).copy(categoryId = 7)
+
+        assertEquals(Category(7, "Groceries"), TransactionWithCategory(entity, "Groceries").toHistoryItem().category)
     }
 
     private fun transaction(occurredAt: LocalDateTime? = null) = MpesaTransaction(
