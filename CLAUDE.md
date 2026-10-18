@@ -129,6 +129,9 @@ milestone or slice is finished, and start work from its "Now" section.
   categorizing and the monthly summary) are in `scenarios/MoneyScenarioTest.kt`.
 - Any new money rule (e.g. money in/out, transfers) gets a seam scenario there, written before the
   code. Run `make coverage` to spot logic left untested.
+- A project hook (`.claude/hooks/test_guard.py`) compares `app/src/test` at the end of each turn
+  with how it was at the start. It lists new tests, and stops the turn once for an explanation when
+  an existing assertion changed, a test was deleted, or an `@Ignore` was added.
 - Real message samples live in `app/src/test/resources/mpesa_samples/`. Treat them as private and
   anonymize names and phone numbers before committing.
 - Ask before adding new dependencies.
