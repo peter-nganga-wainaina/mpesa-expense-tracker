@@ -81,7 +81,7 @@ class MoneyScenarioTest {
     }
 
     @Test
-    fun `transaction fees are not part of the totals`() {
+    fun `a transaction fee is not part of its category's total`() {
         phone.receive(
             "TQ3C4D5E6F Confirmed. Ksh1,100.00 sent to ALICE  MWANGI 0700000001 on 18/10/26 at 8:07 AM. " +
                 "New M-PESA balance is Ksh25,000.00. Transaction cost, Ksh23.00."
@@ -151,7 +151,44 @@ class MoneyScenarioTest {
 
         assertEquals(mapOf("Savings" to 500_00L), phone.moneyOut(october))
         assertEquals(mapOf("Savings" to 200_00L), phone.moneyIn(october))
-        assertEquals(-300_00L, phone.net(october))
+        // 200 in, minus 500 out and the send's Ksh7 fee (5f: fees count in the net).
+        assertEquals(-307_00L, phone.net(october))
+    }
+
+    @Test
+    fun `fees are their own line in money out and count in the net, a withdrawal's fee included`() {
+        phone.receive(
+            "TR2L3M4N5P Confirmed. Ksh1,100.00 sent to ALICE  MWANGI 0700000001 on 18/10/26 at 8:07 AM. " +
+                "New M-PESA balance is Ksh25,000.00. Transaction cost, Ksh23.00."
+        )
+        phone.receive(
+            "TR3M4N5P6Q Confirmed.on 18/10/26 at 8:37 AMWithdraw Ksh2,000.00 from 100001 - SAMPLE AGENT SHOP MAIN RD " +
+                "New M-PESA balance is Ksh19,000.00. Transaction cost, Ksh29.00."
+        )
+        phone.file("TR2L3M4N5P", "Other")
+
+        assertEquals(mapOf("Other" to 1_100_00L), phone.moneyOut(october))
+        assertEquals(52_00L, phone.fees(october))
+        assertEquals(-1_152_00L, phone.net(october))
+    }
+
+    @Test
+    fun `the Fuliza access fee is not counted again as a fee, since the repayment includes it`() {
+        phone.receive(paid(code = "TR4N5P6Q7R", ksh = "1,000.00", to = "SUNRISE CAFE"))
+        phone.receive(
+            "TR5P6Q7R8S Confirmed. Fuliza M-PESA amount is Ksh 948.44. Access Fee charged Ksh 9.49. " +
+                "Total Fuliza M-PESA outstanding amount is Ksh 957.93 due on 17/11/26."
+        )
+        phone.receive(
+            "TR6Q7R8S9T  Confirmed. Ksh 957.93 from your M-PESA has been used to fully pay your outstanding Fuliza M-PESA. " +
+                "Available Fuliza M-PESA limit is Ksh 2000.00. M-PESA balance is Ksh50.00."
+        )
+        phone.file("TR4N5P6Q7R", "Food")
+        phone.file("TR5P6Q7R8S", "Fuliza")
+        phone.file("TR6Q7R8S9T", "Fuliza")
+
+        assertEquals(0L, phone.fees(october))
+        assertEquals(-1_009_49L, phone.net(october))
     }
 
     // Wording follows the anonymized samples in mpesa_samples/paid.txt.
@@ -209,6 +246,9 @@ private class Phone(vararg categoryNames: String) : TransactionStore, ManualEntr
     fun moneyIn(month: YearMonth): Map<String, Long> = totals(month, Direction.IN)
 
     fun net(month: YearMonth): Long = netCents(month, ledger())
+
+    /** The "M-Pesa fees" line under money out. */
+    fun fees(month: YearMonth): Long = summary(month, Direction.OUT).feesCents
 
     private fun totals(month: YearMonth, direction: Direction) =
         summary(month, direction).categories.associate { it.category.name to it.totalCents }

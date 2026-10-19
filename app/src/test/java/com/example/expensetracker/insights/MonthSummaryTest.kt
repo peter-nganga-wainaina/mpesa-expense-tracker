@@ -5,6 +5,7 @@ import com.example.expensetracker.data.StoredTransaction
 import com.example.expensetracker.manual.PaymentSource
 import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.MpesaTransactionType
+import com.example.expensetracker.sms.MpesaTransactionType.FULIZA_DRAWDOWN
 import com.example.expensetracker.sms.MpesaTransactionType.PAID
 import com.example.expensetracker.sms.MpesaTransactionType.RECEIVED
 import com.example.expensetracker.sms.MpesaTransactionType.WITHDRAW
@@ -24,12 +25,12 @@ class MonthSummaryTest {
     private val october = YearMonth.of(2026, 10)
     private var nextCode = 0
 
-    private fun stored(cents: Long, category: Category?, day: Int = 10, month: Int = 10, type: MpesaTransactionType = PAID) = StoredTransaction(
+    private fun stored(cents: Long, category: Category?, day: Int = 10, month: Int = 10, type: MpesaTransactionType = PAID, fee: Long = 0) = StoredTransaction(
         transaction = MpesaTransaction(
             code = "TX%08d".format(nextCode++),
             type = type,
             amountCents = cents,
-            costCents = 0,
+            costCents = fee,
             counterparty = "SHOP",
             phone = null,
             reference = null,
@@ -93,6 +94,54 @@ class MonthSummaryTest {
         )
 
         assertEquals(700_00L, netCents(october, month))
+    }
+
+    @Test
+    fun `fees are their own line in money out, counted in its total`() {
+        val summary = summarize(october, Direction.OUT, listOf(stored(1_100_00, food, fee = 23_00), stored(500_00, transport, fee = 7_00)))
+
+        assertEquals(30_00L, summary.feesCents)
+        assertEquals(listOf(1_100_00L, 500_00L), summary.categories.map { it.totalCents })
+        assertEquals(1_630_00L, summary.totalCents)
+    }
+
+    @Test
+    fun `fees count whether or not their transaction is categorized or a transfer`() {
+        val summary = summarize(october, Direction.OUT, listOf(stored(1_100_00, null, fee = 23_00), stored(2_000_00, null, type = WITHDRAW, fee = 29_00)))
+
+        assertEquals(52_00L, summary.feesCents)
+        assertEquals(52_00L, summary.totalCents)
+    }
+
+    @Test
+    fun `a Fuliza access fee is not a fee here, since the repayment already includes it`() {
+        val summary = summarize(october, Direction.OUT, listOf(stored(948_44, null, type = FULIZA_DRAWDOWN, fee = 9_49)))
+
+        assertEquals(0L, summary.feesCents)
+    }
+
+    @Test
+    fun `money in has no fees line`() {
+        val summary = summarize(october, Direction.IN, listOf(stored(3_000_00, bills, type = RECEIVED), stored(100_00, food, fee = 23_00)))
+
+        assertEquals(0L, summary.feesCents)
+        assertEquals(3_000_00L, summary.totalCents)
+    }
+
+    @Test
+    fun `the fees line gets its share of money out, and all the percentages add up to 100`() {
+        val summary = summarize(october, Direction.OUT, listOf(stored(100_00, food, fee = 200_00), stored(100_00, transport)))
+
+        assertEquals(50, summary.feesPercent)
+        assertEquals(listOf(25, 25), summary.categories.map { it.percent })
+    }
+
+    @Test
+    fun `a share too small to round to 1 percent shows as under 1 percent, not 0`() {
+        assertEquals("<1%", percentLabel(percent = 0, cents = 44_00))
+        assertEquals("0%", percentLabel(percent = 0, cents = 0))
+        assertEquals("1%", percentLabel(percent = 1, cents = 120_00))
+        assertEquals("59%", percentLabel(percent = 59, cents = 12_657_00))
     }
 
     @Test

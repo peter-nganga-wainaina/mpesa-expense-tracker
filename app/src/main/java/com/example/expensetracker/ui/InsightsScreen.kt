@@ -3,14 +3,17 @@ package com.example.expensetracker.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
@@ -38,13 +41,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.AppContainer
 import com.example.expensetracker.categorize.Category
-import com.example.expensetracker.insights.CategoryTotal
 import com.example.expensetracker.insights.Direction
 import com.example.expensetracker.insights.MonthSummary
 import com.example.expensetracker.insights.canGoBack
 import com.example.expensetracker.insights.canGoForward
 import com.example.expensetracker.insights.earliestMonth
 import com.example.expensetracker.insights.netCents
+import com.example.expensetracker.insights.percentLabel
 import com.example.expensetracker.insights.summarize
 import com.example.expensetracker.notify.formatKsh
 import com.example.expensetracker.notify.formatNetKsh
@@ -67,6 +70,7 @@ fun InsightsScreen(container: AppContainer, onOpenQueue: () -> Unit, modifier: M
     var monthText by rememberSaveable { mutableStateOf(current.toString()) }
     var openCategoryId by rememberSaveable { mutableStateOf<Long?>(null) }
     var directionName by rememberSaveable { mutableStateOf(Direction.OUT.name) }
+    var showingFees by rememberSaveable { mutableStateOf(false) }
     val month = YearMonth.parse(monthText)
     val direction = Direction.valueOf(directionName)
     val transactions = history ?: return
@@ -76,6 +80,10 @@ fun InsightsScreen(container: AppContainer, onOpenQueue: () -> Unit, modifier: M
 
     // Looked up by id so the detail stays open even after its last transaction is re-filed elsewhere.
     val openCategory = openCategoryId?.let { id -> categories.firstOrNull { it.id == id } }
+    if (showingFees) {
+        FeesDetailScreen(month, transactions, onBack = { showingFees = false }, modifier = modifier)
+        return
+    }
     if (openCategory != null) {
         CategoryDetailScreen(container, month, direction, openCategory, transactions, onBack = { openCategoryId = null }, modifier = modifier)
         return
@@ -99,7 +107,7 @@ fun InsightsScreen(container: AppContainer, onOpenQueue: () -> Unit, modifier: M
         DirectionSwitch(direction, onChange = { directionName = it.name })
         TotalCard(summary, direction)
         NetRow(net)
-        if (summary.categories.isNotEmpty()) CategoryList(summary.categories, onOpen = { openCategoryId = it.id })
+        if (summary.categories.isNotEmpty() || summary.feesCents > 0) CategoryList(summary, onOpen = { openCategoryId = it.id }, onOpenFees = { showingFees = true })
         if (summary.uncategorizedCount > 0) UncategorizedNote(summary.uncategorizedCount, onOpenQueue)
     }
 }
@@ -145,13 +153,12 @@ private fun TotalCard(summary: MonthSummary, direction: Direction) {
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val description = if (summary.categories.isEmpty()) {
-            "No categorized ${direction.label.lowercase()} this month"
-        } else {
-            summary.categories.joinToString(prefix = "Breakdown: ") { "${it.category.name} ${it.percent}%" }
-        }
+        val parts = summary.categories.map { "${it.category.name} ${percentLabel(it.percent, it.totalCents)}" } +
+            if (summary.feesCents > 0) listOf("$FEES_LABEL ${percentLabel(summary.feesPercent, summary.feesCents)}") else emptyList()
+        val description = if (parts.isEmpty()) "No categorized ${direction.label.lowercase()} this month" else parts.joinToString(prefix = "Breakdown: ")
         Donut(
-            slices = summary.categories.map { DonutSlice(it.totalCents, categoryColor(it.category.id)) },
+            slices = summary.categories.map { DonutSlice(it.totalCents, categoryColor(it.category.id)) } +
+                if (summary.feesCents > 0) listOf(DonutSlice(summary.feesCents, feesColor())) else emptyList(),
             trackColor = colors.onPrimaryContainer.copy(alpha = 0.15f),
             description = description,
         ) {
@@ -178,49 +185,76 @@ private fun TotalCard(summary: MonthSummary, direction: Direction) {
     }
 }
 
+/** Categories largest first, then the fees line, which isn't a category; each opens what makes it up. */
 @Composable
-private fun CategoryList(totals: List<CategoryTotal>, onOpen: (Category) -> Unit) {
+private fun CategoryList(summary: MonthSummary, onOpen: (Category) -> Unit, onOpenFees: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(24.dp))
             .padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
-        totals.forEachIndexed { index, total ->
+        summary.categories.forEachIndexed { index, total ->
             if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(onClickLabel = "Show ${total.category.name} transactions") { onOpen(total.category) }
-                    .padding(vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                CategoryDot(total.category)
-                // The name gives way (ellipsis) so the amount never breaks across lines.
-                Text(
-                    total.category.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    "${total.percent}%",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    formatKsh(total.totalCents),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-            }
+            TotalRow(
+                dot = { CategoryDot(total.category) },
+                name = total.category.name,
+                percent = total.percent,
+                cents = total.totalCents,
+                modifier = Modifier.clickable(onClickLabel = "Show ${total.category.name} transactions") { onOpen(total.category) },
+            )
+        }
+        if (summary.feesCents > 0) {
+            if (summary.categories.isNotEmpty()) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            TotalRow(
+                dot = { Box(Modifier.size(10.dp).background(feesColor(), CircleShape)) },
+                name = FEES_LABEL,
+                percent = summary.feesPercent,
+                cents = summary.feesCents,
+                modifier = Modifier.clickable(onClickLabel = "Show the fees", onClick = onOpenFees),
+            )
         }
     }
 }
+
+@Composable
+private fun TotalRow(dot: @Composable () -> Unit, name: String, percent: Int, cents: Long, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        dot()
+        // The name gives way (ellipsis) so the amount never breaks across lines.
+        Text(
+            name,
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            percentLabel(percent, cents),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            formatKsh(cents),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
+}
+
+/** A muted brown, so the fees line reads as different from the vibrant category colours. */
+@Composable
+private fun feesColor() = MaterialTheme.colorScheme.outline
+
+private const val FEES_LABEL = "M-Pesa fees"
 
 /** Money in minus money out, the same whichever view is showing. */
 @Composable

@@ -71,11 +71,14 @@ ui/                              // uncategorized queue, category picker, settin
   name and number (`HELEN A*****`). They are SENT transactions, not notices.
 - **Phone numbers are optional and opaque.** Since 2026, received-money messages mask the sender's
   number (`0700***003`). Pochi la Biashara sends have no number at all.
-- **Transaction cost is stored separately** from the amount, for tracking.
+- **Transaction cost is stored separately** from the amount. Insights shows the month's fees as one
+  "M-Pesa fees" line in money out (counted in its total and the net), never inside a category. The
+  Fuliza access fee is left out there, since the repayment already includes it.
 - **The full SMS is stored with each transaction** (`body`), shown on request as "original message"
   and available for re-parsing if the parser improves. Same for unparsed messages.
 - **Fuliza:** the payment message is the spending. The drawdown's access fee is recorded as a cost.
-  The repayment is not spending (counting it would double-count).
+  The drawdown is money in and the repayment money out, so together they net to the payment plus
+  the fee (see Money in / out).
 - **Unmatched messages** go to an `UnparsedMessage` table, never silently dropped.
 - **Notification:** max 3 actions, so use 2 smart picks plus "Other…". Smart picks come from
   merchant memory (last category for this counterparty) first, then most-used categories.
