@@ -13,7 +13,7 @@ fun unparsedBannerText(waiting: Int): String? = when {
     else -> "$waiting M-Pesa messages couldn't be read"
 }
 
-/** Whether she has already typed this message in as spending. */
+/** Whether the user has already typed this message in as spending. */
 sealed interface MessageStatus {
     data object NotAdded : MessageStatus
     data class Added(val entry: StoredTransaction) : MessageStatus

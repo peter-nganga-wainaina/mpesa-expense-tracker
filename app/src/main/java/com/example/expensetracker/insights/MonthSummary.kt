@@ -35,7 +35,7 @@ fun summarize(month: YearMonth, direction: Direction, transactions: List<StoredT
         .mapNotNull { stored -> stored.category?.let { it to stored.transaction.amountCents } }
         .groupBy({ it.first }, { it.second })
         .mapValues { (_, amounts) -> amounts.sum() }
-    // A fee always leaves her pocket, whatever the transaction's own direction or category.
+    // A fee always leaves the user's pocket, whatever the transaction's own direction or category.
     val feesCents = if (direction == Direction.OUT) inMonth.sumOf { it.feeCents } else 0L
     val totalCents = totals.values.sum() + feesCents
     val percents = wholePercents(totals.mapKeys { Slice.Category(it.key.id) } + (Slice.Fees to feesCents), totalCents)

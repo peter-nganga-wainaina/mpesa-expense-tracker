@@ -100,7 +100,7 @@ fun AddSpendingSheet(
     var addingCategory by rememberSaveable { mutableStateOf(false) }
     val occurredAt = LocalDateTime.parse(occurredAtText)
 
-    // Merchant memory: "Mama Mboga" pre-selects what she filed it under last time, until she picks herself.
+    // Merchant memory: "Mama Mboga" pre-selects what the user filed it under last time, until they pick by hand.
     LaunchedEffect(note) {
         if (pickedCategoryByHand || note.isBlank()) return@LaunchedEffect
         delay(300) // wait for a pause in typing
@@ -248,7 +248,7 @@ fun AddSpendingSheet(
             existing = categories,
             onAdd = { name ->
                 addingCategory = false
-                // Created, then chosen: making a category from here means she wants to file under it.
+                // Created, then chosen: making a category from here means the user wants to file under it.
                 scope.launch {
                     container.categories.add(name)?.let { categoryId = it.id; pickedCategoryByHand = true }
                 }

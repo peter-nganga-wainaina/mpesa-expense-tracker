@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val showingDark = themeMode.isDark(systemIsDark = isSystemInDarkTheme())
             // Status and navigation bar icons follow the app's theme, not the phone's, so they stay
-            // readable when she picks the opposite of her phone's setting.
+            // readable when the user picks the opposite of the phone's setting.
             LaunchedEffect(showingDark) {
                 val bars = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { showingDark }
                 enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)

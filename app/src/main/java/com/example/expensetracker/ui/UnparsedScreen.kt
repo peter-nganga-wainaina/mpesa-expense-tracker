@@ -45,8 +45,8 @@ import java.time.LocalDate
 import kotlinx.coroutines.launch
 
 /**
- * M-Pesa receipts the parser couldn't read. Each can be typed in as spending (she enters the amount)
- * and stays listed until she dismisses it. Once typed in, it shows the entry it became and offers to
+ * M-Pesa receipts the parser couldn't read. Each can be typed in as spending (the user enters the amount)
+ * and stays listed until the user dismisses it. Once typed in, it shows the entry it became and offers to
  * edit that entry, never to add a second one.
  */
 @Composable

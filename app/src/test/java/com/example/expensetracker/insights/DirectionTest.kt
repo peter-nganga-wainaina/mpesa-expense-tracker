@@ -13,7 +13,7 @@ class DirectionTest {
     }
 
     @Test
-    fun `a withdrawal is a transfer to her own cash`() {
+    fun `a withdrawal is a transfer to the user's own cash`() {
         assertEquals(Direction.TRANSFER, directionOf(MpesaTransactionType.WITHDRAW))
     }
 

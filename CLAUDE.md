@@ -108,7 +108,7 @@ ui/                              // uncategorized queue, category picker, settin
   - **Sweeper:** a fixed, invisible 3-day look-back on every app open and daily (WorkManager,
     `DailySweepWorker`), catching anything the receiver missed. Overlap is harmless: codes dedupe.
 - **Money in / out / transfer.** Each transaction has a direction, defaulted by type in one place:
-  RECEIVED and FULIZA_DRAWDOWN are in; WITHDRAW is a transfer (cash moved to her purse; manual cash
+  RECEIVED and FULIZA_DRAWDOWN are in; WITHDRAW is a transfer (cash moved to the user's purse; manual cash
   entries are the spending, so it isn't counted twice); everything else, including manual entries,
   is out. Insights splits money out and money in by category, with the month's net. Categories still
   carry the meaning (e.g. "Savings", "Fuliza"); user-editable rules may override the defaults later.
