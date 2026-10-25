@@ -14,7 +14,7 @@ donut, dark-on-dark status bar icons, and an unlabeled button.
 - **Ask before starting the emulator** (project rule; the dev Mac has 8 GB RAM). Close it and run
   `make stop` when done.
 - **Update vs fresh install:** `make install` keeps the app's data. Uninstall first
-  (`adb uninstall com.example.expensetracker`) only when the database schema changed in place.
+  (`adb uninstall io.github.peter_nganga_wainaina.expensetracker`) only when the database schema changed in place.
 - Use `tap.sh` (next to this file) to tap by visible text or accessibility label, never by guessed
   coordinates: `.claude/skills/verify-on-emulator/tap.sh "Add spending"`. "not found" is itself a
   finding (see Accessibility).
@@ -47,7 +47,7 @@ donut, dark-on-dark status bar icons, and an unlabeled button.
 ## Data paths
 
 - **Live SMS, backfill, and sweep** each reach the database (check with the app's screens or by
-  copying `databases/expensetracker.db*` via `adb exec-out run-as com.example.expensetracker cat`).
+  copying `databases/expensetracker.db*` via `adb exec-out run-as io.github.peter_nganga_wainaina.expensetracker cat`).
 - **No duplicates** after re-delivery or a sweep; counts match the expected result.
 - **Notifications:** posted when they should be and not when they shouldn't (backfill, manual
   entries); count via `adb logcat -b events | grep notification_enqueue`.
