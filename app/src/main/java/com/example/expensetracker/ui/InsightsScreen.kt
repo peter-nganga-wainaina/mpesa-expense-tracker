@@ -127,10 +127,10 @@ private fun MonthSwitcher(month: YearMonth, canGoBack: Boolean, canGoForward: Bo
     }
 }
 
-/** Transfers (withdrawals) have no view of their own: they count in neither. */
+/** Transfers get a view too, though they count in neither money out, money in nor the net. */
 @Composable
 private fun DirectionSwitch(direction: Direction, onChange: (Direction) -> Unit) {
-    val options = listOf(Direction.OUT, Direction.IN)
+    val options = listOf(Direction.OUT, Direction.IN, Direction.TRANSFER)
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
         options.forEachIndexed { index, option ->
             SegmentedButton(
@@ -289,7 +289,7 @@ internal val Direction.label: String
     get() = when (this) {
         Direction.OUT -> "Money out"
         Direction.IN -> "Money in"
-        Direction.TRANSFER -> error("Transfers have no view of their own")
+        Direction.TRANSFER -> "Transfers"
     }
 
 private val MONTH_LABEL = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)

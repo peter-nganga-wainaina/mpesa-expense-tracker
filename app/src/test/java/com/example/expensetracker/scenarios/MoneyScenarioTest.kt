@@ -38,7 +38,7 @@ import org.junit.Test
 class MoneyScenarioTest {
 
     private val october = YearMonth.of(2026, 10)
-    private val phone = Phone("Food", "Transport", "Other", "Fuliza", "Savings")
+    private val phone = Phone("Food", "Transport", "Other", "Fuliza", "Savings", "Cash")
 
     @Test
     fun `cash added by hand counts alongside M-Pesa spending`() {
@@ -136,6 +136,22 @@ class MoneyScenarioTest {
 
         assertEquals(mapOf("Food" to 450_00L), phone.moneyOut(october))
         assertEquals(emptyMap<String, Long>(), phone.moneyIn(october))
+    }
+
+    @Test
+    fun `a withdrawal shows under transfers by its category, its fee staying in money out`() {
+        // Wording from mpesa_samples/withdraw.txt.
+        phone.receive(
+            "TS4N5P6Q7R Confirmed.on 18/10/26 at 8:37 AMWithdraw Ksh2,000.00 from 100001 - SAMPLE AGENT SHOP MAIN RD " +
+                "New M-PESA balance is Ksh19,000.00. Transaction cost, Ksh29.00."
+        )
+        phone.file("TS4N5P6Q7R", "Cash")
+
+        assertEquals(mapOf("Cash" to 2_000_00L), phone.transfers(october))
+        assertEquals(2_000_00L, phone.summary(october, Direction.TRANSFER).totalCents)
+        assertEquals(29_00L, phone.fees(october))
+        // Only the fee left: the Ksh2,000 is still the user's money, now as cash.
+        assertEquals(-29_00L, phone.net(october))
     }
 
     @Test
@@ -244,6 +260,9 @@ private class Phone(vararg categoryNames: String) : TransactionStore, ManualEntr
 
     /** Category name to total cents, as Insights' Money in view lists them. */
     fun moneyIn(month: YearMonth): Map<String, Long> = totals(month, Direction.IN)
+
+    /** Category name to total cents, as Insights' Transfers view lists them. */
+    fun transfers(month: YearMonth): Map<String, Long> = totals(month, Direction.TRANSFER)
 
     fun net(month: YearMonth): Long = netCents(month, ledger())
 

@@ -110,7 +110,8 @@ ui/                              // uncategorized queue, category picker, settin
 - **Money in / out / transfer.** Each transaction has a direction, defaulted by type in one place:
   RECEIVED and FULIZA_DRAWDOWN are in; WITHDRAW is a transfer (cash moved to the user's purse; manual cash
   entries are the spending, so it isn't counted twice); everything else, including manual entries,
-  is out. Insights splits money out and money in by category, with the month's net. Categories still
+  is out. Insights splits money out, money in and transfers by category, with the month's net
+  (transfers count in neither the totals nor the net). Categories still
   carry the meaning (e.g. "Savings", "Fuliza"); user-editable rules may override the defaults later.
 - **Look:** warm and vibrant, built on maroon and brown. Light theme "Maroon & Latte" (latte
   background, maroon highlights, espresso text) and dark theme "Cocoa Night" (chocolate background,
