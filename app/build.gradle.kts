@@ -56,9 +56,11 @@ android {
         }
         release {
             signingConfig = signingConfigs.findByName("release")
+            // No R8: the release runs the same code as the tested debug build. Shrinking only some
+            // packages crashed the release at startup (IllegalAccessError between renamed classes),
+            // and a crash at startup also stops the app updating itself. A few MB is the cheaper cost.
             optimization {
-                enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+                enable = false
             }
         }
     }
