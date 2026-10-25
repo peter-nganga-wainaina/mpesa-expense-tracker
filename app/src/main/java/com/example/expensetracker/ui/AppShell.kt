@@ -2,6 +2,7 @@ package com.example.expensetracker.ui
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -36,6 +37,7 @@ import com.example.expensetracker.R
 import com.example.expensetracker.categorize.Category
 import com.example.expensetracker.manual.ManualEntry
 import com.example.expensetracker.notify.formatKsh
+import com.example.expensetracker.update.ReleaseInfo
 import kotlinx.coroutines.launch
 
 private enum class Tab(val label: String, @param:DrawableRes val icon: Int) {
@@ -55,6 +57,7 @@ fun AppShell(
     onRequestHandled: () -> Unit,
     showingDark: Boolean,
     onToggleTheme: () -> Unit,
+    availableUpdate: ReleaseInfo?,
 ) {
     var tab by rememberSaveable { mutableStateOf(Tab.Queue) }
     var adding by rememberSaveable { mutableStateOf(false) }
@@ -93,18 +96,22 @@ fun AppShell(
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
-                Tab.entries.forEach { entry ->
-                    NavigationBarItem(
-                        selected = tab == entry,
-                        onClick = { tab = entry },
-                        icon = { Icon(painterResource(entry.icon), contentDescription = null) },
-                        label = { Text(entry.label) },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
-                    )
+            // Above the tabs, so it shows on every tab without covering any screen's header.
+            Column {
+                if (availableUpdate != null) UpdateBanner(availableUpdate, container.updateInstaller)
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                    Tab.entries.forEach { entry ->
+                        NavigationBarItem(
+                            selected = tab == entry,
+                            onClick = { tab = entry },
+                            icon = { Icon(painterResource(entry.icon), contentDescription = null) },
+                            label = { Text(entry.label) },
+                            colors = NavigationBarItemDefaults.colors(
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            ),
+                        )
+                    }
                 }
             }
         },

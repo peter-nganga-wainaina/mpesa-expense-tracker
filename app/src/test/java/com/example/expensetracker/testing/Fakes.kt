@@ -6,6 +6,8 @@ import com.example.expensetracker.sms.MpesaTransaction
 import com.example.expensetracker.sms.ReceivedSms
 import com.example.expensetracker.sms.TransactionNotifier
 import com.example.expensetracker.sms.TransactionStore
+import com.example.expensetracker.update.ReleaseSource
+import java.io.IOException
 
 /** In-memory stand-in for the transaction tables, deduplicating like the real ones. */
 class FakeTransactionStore : TransactionStore {
@@ -75,4 +77,16 @@ class FakeCategoryStore(vararg names: String) : CategoryStore {
     }
 
     fun named(name: String): Category = all.single { it.name == name }
+}
+
+/**
+ * The latest release's version file, as GitHub would serve it. Offline (null) behaves like no network
+ * or a private repo: the fetch throws an IOException, as the real HTTPS fetch does.
+ */
+class FakeReleaseSource(var versionFile: String? = null) : ReleaseSource {
+    override suspend fun latestVersionFile(): String = versionFile ?: throw IOException("offline")
+
+    fun publish(versionCode: Long, versionName: String = "1.$versionCode") {
+        versionFile = "versionCode=$versionCode\nversionName=$versionName\n"
+    }
 }

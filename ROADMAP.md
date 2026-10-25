@@ -4,7 +4,7 @@ Where the app is, what comes next, and what is planned for later. Design decisio
 piece live in `CLAUDE.md`; this file tracks order and status.
 
 ```
-✅ Capture ──▶ ✅ Categorize ──▶ ✅ Catch-up ──▶ ⏳ Insights ──▶ Release prep ──▶ 🚀 First install
+✅ Capture ──▶ ✅ Categorize ──▶ ✅ Catch-up ──▶ ✅ Insights ──▶ ⏳ Release prep ──▶ 🚀 First install
  parser,        queue, picker,    first-run       theme, history,  signing key,
  receiver,      quick picks,      setup, inbox    monthly charts,  real-device
  ingest         merchant memory   backfill,       manual add       check
@@ -46,7 +46,8 @@ Built in slices; each one is usable on its own.
 | Release build and APK size check | ⬜ | Confirms the shrunk build works and measures the real size |
 | Real-device check (Samsung) | ⬜ | Real Safaricom SMS delivery, notification behaviour, and Samsung's "Never sleeping apps" steps can't be tested on the emulator |
 | **App icon** | ⬜ | Replace the default Android icon with one in the maroon-and-brown look (options on the design canvas). An adaptive icon, so it suits Samsung's icon shapes. |
-| **Auto-update** | ⬜ | Must ship in the first installed version, or that version can't update itself. Sideloaded apps can't update silently: Android always asks the user to tap "Install". Likely shape: publish each signed APK as a GitHub Release; the app checks the latest release on open (or daily), and offers "Update available" → download → Android's install prompt. Needs the `INTERNET` permission (the app has none today, a privacy-visible change for a finance app) and `REQUEST_INSTALL_PACKAGES`. Every update must be signed with the same release key. A no-code alternative: Obtainium, a third-party app that watches a GitHub repo's releases and installs updates. |
+| **Auto-update** | ⏳ built and unit-tested (`update/`, `release.yml`); waiting on the release key, GitHub secrets, and an end-to-end emulator check | Must ship in the first installed version, or that version can't update itself. Sideloaded apps can't update silently: Android always asks the user to tap "Install". Shape: each signed APK is published as a GitHub Release; the app checks the latest release on open (or daily), and offers "Update available" → download → Android's install prompt. Needs the `INTERNET` permission (contacting GitHub only, sending no data) and `REQUEST_INSTALL_PACKAGES`. Every update must be signed with the same release key. The repo must be public before the first install, or the app can't read its releases. Chosen over Obtainium (a second app for the user to understand) and sending APKs by hand (kept as the emergency fallback). |
+| **Remote first install** | ⬜ | The one manual install, done remotely over a video call: the user downloads the APK from the GitHub Release; the in-app updater handles every install after it. Play Protect may block a downloaded app that asks for SMS permissions, so the walkthrough covers Samsung Auto Blocker, "Install unknown apps", and pausing Play Protect scanning (then turning it back on, and choosing "Keep" if it later flags the app). Needs a short illustrated install guide. Before release, have a tester in Kenya try a download install and one in-app update, to learn which blocks appear and whether updates hit them too. |
 | **CI: tests on every push** | ✅ `.github/workflows/tests.yml` runs the unit tests on every push and pull request | A GitHub Actions workflow running `./gradlew :app:testDebugUnitTest` on push and pull request, on GitHub's machines (no load on the dev Mac). Later it can also build the signed release APK and attach it to a GitHub Release, which is what auto-update would download. |
 
 ## Later

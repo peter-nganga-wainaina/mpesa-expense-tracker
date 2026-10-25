@@ -46,11 +46,19 @@ categorize/                      // Category, CategoryStore, Categorizer, new-na
 suggest/CategorySuggester.kt     // interface: transaction -> ranked category suggestions
 notify/CategoryPrompt.kt         // notification with category action buttons
 notify/CategoryActionReceiver.kt // handles button taps
+update/                          // self-update from GitHub Releases: check (pure Kotlin), daily notice, download + install
 sync/                            // later: sync or export, target undecided
 ui/                              // uncategorized queue, category picker, settings, first-run setup
 ```
 
 ## Key design decisions
+- **Self-update from GitHub Releases.** Pushing a tag `v<versionName>` makes `release.yml` publish
+  `expense-tracker.apk` and `version.txt` (read from the APK). The app fetches
+  `releases/latest/download/version.txt` on open and daily (`DailyUpdateCheckWorker`, one notification
+  per version), and offers a banner; the download starts only from a tap, then Android's installer
+  asks to confirm. `INTERNET` is used for this alone, and nothing is sent. The `applicationId` and
+  release key are permanent: changing either means a reinstall, which wipes the data. Bump
+  `versionCode` and `versionName` for every release. The repo must be public for the app to see releases.
 - **No always-running service.** The manifest-registered receiver is woken by Android on each SMS.
   Use `goAsync()` plus a coroutine for the DB write.
 - **Multipart SMS:** concatenate all parts from `getMessagesFromIntent` before parsing.

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.graphics.Color
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -19,6 +20,9 @@ import com.example.expensetracker.ui.AppShell
 import com.example.expensetracker.ui.SetupScreen
 import com.example.expensetracker.ui.theme.ExpenseTrackerTheme
 import com.example.expensetracker.ui.theme.ThemeMode
+import com.example.expensetracker.update.DailyUpdateCheckWorker
+import com.example.expensetracker.update.ReleaseInfo
+import com.example.expensetracker.update.UpdateCheck
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -26,6 +30,7 @@ class MainActivity : ComponentActivity() {
     private val container by lazy { AppContainer(this) }
     private var setupComplete by mutableStateOf(false)
     private var themeMode by mutableStateOf(ThemeMode.SYSTEM)
+    private var availableUpdate by mutableStateOf<ReleaseInfo?>(null)
 
     /** A transaction whose picker should open, set when the user arrives from its notification. */
     private var requestedCode by mutableStateOf<String?>(null)
@@ -55,25 +60,38 @@ class MainActivity : ComponentActivity() {
                             themeMode = ThemeMode.toggledFrom(showingDark)
                             container.themePreference.mode = themeMode
                         },
+                        availableUpdate = availableUpdate,
                     )
                 } else {
                     SetupScreen(container, onFinished = {
                         container.setup.markComplete()
                         setupComplete = true
                         DailySweepWorker.schedule(this)
+                        DailyUpdateCheckWorker.schedule(this)
                     })
                 }
             }
         }
     }
 
-    // Each time the app comes to the front, catch any M-Pesa messages the receiver missed, and make
-    // sure the daily sweep is scheduled for the days the app isn't opened.
+    // Each time the app comes to the front, catch any M-Pesa messages the receiver missed, look for a
+    // newer release, and make sure both daily jobs are scheduled for the days the app isn't opened.
     override fun onStart() {
         super.onStart()
         if (!setupComplete) return
         lifecycleScope.launch { container.backfill.sweep() }
+        lifecycleScope.launch { checkForUpdate() }
         DailySweepWorker.schedule(this)
+        DailyUpdateCheckWorker.schedule(this)
+    }
+
+    private suspend fun checkForUpdate() {
+        when (val check = container.updateChecker.check()) {
+            is UpdateCheck.Available -> availableUpdate = check.release
+            UpdateCheck.UpToDate -> availableUpdate = null
+            // Keeps whatever was showing: being offline for a moment shouldn't hide a known update.
+            is UpdateCheck.Failed -> Log.w("MainActivity", "Update check failed", check.cause)
+        }
     }
 
     // singleTop: a notification tap while the app is open arrives here instead of stacking a new screen.

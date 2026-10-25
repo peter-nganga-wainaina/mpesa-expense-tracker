@@ -1,15 +1,11 @@
 package com.example.expensetracker.notify
 
-import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import com.example.expensetracker.MainActivity
 import com.example.expensetracker.R
 import com.example.expensetracker.categorize.Category
@@ -23,8 +19,8 @@ import com.example.expensetracker.sms.TransactionNotifier
 class CategoryPrompt(private val context: Context) : TransactionNotifier {
 
     override fun promptForCategory(transaction: MpesaTransaction, quickPicks: List<Category>) {
-        // Without the permission (Android 13+) notify() is a no-op; the transaction still waits in the queue.
-        if (!canPostNotifications()) return
+        // Without the permission, the transaction still waits in the queue.
+        if (!context.canPostNotifications()) return
         ensureChannel()
 
         val openPicker = openPicker(transaction.code)
@@ -55,11 +51,6 @@ class CategoryPrompt(private val context: Context) : TransactionNotifier {
 
     // Keyed by transaction code, so the prompt can be found again to dismiss it.
     private fun notificationId(transactionCode: String) = transactionCode.hashCode()
-
-    private fun canPostNotifications(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
 
     private fun ensureChannel() {
         val channel = NotificationChannel(CHANNEL_ID, "Transactions to categorize", NotificationManager.IMPORTANCE_HIGH)

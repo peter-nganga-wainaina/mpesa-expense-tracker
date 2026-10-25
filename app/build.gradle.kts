@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -8,6 +10,17 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+// Release signing lives outside the repo: in local.properties on the dev Mac, in environment variables
+// (from GitHub secrets) in CI. Without all four, assembleRelease makes an unsigned APK that can't be installed.
+val releaseSigning: Map<String, String> = run {
+    val local = Properties().apply {
+        rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+    }
+    listOf("RELEASE_STORE_FILE", "RELEASE_STORE_PASSWORD", "RELEASE_KEY_ALIAS", "RELEASE_KEY_PASSWORD")
+        .mapNotNull { key -> (System.getenv(key) ?: local.getProperty(key))?.let { key to it } }
+        .toMap()
+}
+
 android {
     namespace = "com.example.expensetracker"
     compileSdk {
@@ -15,7 +28,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.expensetracker"
+        // Permanent: Android only updates an installed app from an APK with the same ID (and signing key).
+        applicationId = "io.github.peter_nganga_wainaina.expensetracker"
         minSdk = 26
         targetSdk = 37
         versionCode = 1
@@ -24,12 +38,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (releaseSigning.size == 4) {
+            create("release") {
+                storeFile = file(releaseSigning.getValue("RELEASE_STORE_FILE"))
+                storePassword = releaseSigning.getValue("RELEASE_STORE_PASSWORD")
+                keyAlias = releaseSigning.getValue("RELEASE_KEY_ALIAS")
+                keyPassword = releaseSigning.getValue("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             // Built-in JaCoCo coverage for JVM unit tests (no extra plugin): `make coverage`.
             enableUnitTestCoverage = true
         }
         release {
+            signingConfig = signingConfigs.findByName("release")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")

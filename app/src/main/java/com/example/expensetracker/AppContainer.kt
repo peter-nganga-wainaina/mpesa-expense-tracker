@@ -1,6 +1,7 @@
 package com.example.expensetracker
 
 import android.content.Context
+import androidx.core.content.pm.PackageInfoCompat
 import com.example.expensetracker.categorize.Categorizer
 import com.example.expensetracker.data.AppDatabase
 import com.example.expensetracker.data.RoomCategoryStore
@@ -14,6 +15,10 @@ import com.example.expensetracker.sms.TransactionIngest
 import com.example.expensetracker.suggest.ChainedSuggester
 import com.example.expensetracker.suggest.MerchantMemorySuggester
 import com.example.expensetracker.suggest.MostUsedSuggester
+import com.example.expensetracker.update.GitHubReleases
+import com.example.expensetracker.update.UpdateChecker
+import com.example.expensetracker.update.UpdateInstaller
+import com.example.expensetracker.update.UpdatePreferences
 import java.time.LocalDateTime
 
 /** Wires the app's pieces together in one place, for the receivers and the UI alike. Cheap to create. */
@@ -32,4 +37,12 @@ class AppContainer(context: Context) {
     val backfill = InboxBackfill(SmsInbox(app), ingest, now = LocalDateTime::now)
     val setup = SetupState(app)
     val themePreference = ThemePreference(app)
+
+    private val releases = GitHubReleases()
+    val updateChecker = UpdateChecker(releases, installedVersionCode = installedVersionCode(app))
+    val updateInstaller = UpdateInstaller(releases)
+    val updatePreferences = UpdatePreferences(app)
 }
+
+private fun installedVersionCode(context: Context): Long =
+    PackageInfoCompat.getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0))
