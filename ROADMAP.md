@@ -24,7 +24,7 @@ Status: ✅ done · ⏳ in progress · ⬜ not started
 | 6 | ✅ Setup and backfill | First-run setup (permissions, first import of 0/7/14/30 days, battery), inbox sweep on app open and daily |
 | — | ✅ Original message | Each transaction keeps its full SMS; "Show original message" in the picker shows it (selectable) |
 
-## Now: milestone 5, insights
+## Milestone 5: insights ✅
 
 Built in slices; each one is usable on its own.
 
@@ -38,17 +38,19 @@ Built in slices; each one is usable on its own.
 | **5e. Money in / out** | ✅ | Every transaction has a direction: **in**, **out**, or **transfer** (moved between the user's own pockets; counted in neither), defaulted by type in `insights/Direction.kt`: RECEIVED and FULIZA_DRAWDOWN are in; WITHDRAW is a transfer (the manual cash entries are the spending, so nothing is counted twice); everything else, and manual entries, is out. Insights has a Money out / Money in switch, each with its own category breakdown and drill-down, plus the month's net (categorized only, so it equals the two totals shown). A Fuliza payment, borrow and repayment net to the payment plus the fee. Directions are defaults only, not editable per transaction. |
 | **5f. M-Pesa fees** | ✅ | Money out has an "M-Pesa fees" line after the categories (a muted slice in the donut), counted in its total and in the net, so both match what actually left. Categories keep matching their messages. Fees are every transaction cost, categorized or not, **except** the Fuliza access fee, which the repayment already includes (957.93 = 948.44 + 9.49). A withdrawal's fee counts even though the withdrawal itself is a transfer. Tapping the line shows where the number comes from: each fee, largest text first, with the transaction it was charged on, plus a note giving the month's Fuliza access fees and why they aren't listed. A share that rounds to 0% reads "<1%". |
 
-## Before the first real install
+## Now: before the first real install
 
 | Item | Status | Why |
 |---|---|---|
 | Release signing key, backed up | ✅ key created and in GitHub secrets (backup: keep a copy off this Mac) | Android only installs an update over an app signed with the same key. Losing the key means uninstalling, which wipes the data. |
 | Release build and APK size check | ✅ 8.1 MB | Partial R8 shrinking crashed the release at startup, so release builds are no longer shrunk: they run the same code as the tested debug build |
-| Real-device check (Samsung) | ⬜ | Real Safaricom SMS delivery, notification behaviour, and Samsung's "Never sleeping apps" steps can't be tested on the emulator |
+| Real-device check (Samsung) | ⬜ during the first week of use | Real Safaricom SMS delivery, notification behaviour, and Samsung's "Never sleeping apps" steps can't be tested on the emulator. No test phone: the 3-day sweep means a missed notification never loses a transaction, and the updater ships fixes. |
 | **App icon** | ⬜ | Replace the default Android icon with one in the maroon-and-brown look (options on the design canvas). An adaptive icon, so it suits Samsung's icon shapes. |
 | **Auto-update** | ✅ v1.0 → v1.1 checked on the emulator: banner, one-time "allow from this source", install prompt, data kept | Must ship in the first installed version, or that version can't update itself. Sideloaded apps can't update silently: Android always asks the user to tap "Install". Shape: each signed APK is published as a GitHub Release; the app checks the latest release on open (or daily), and offers "Update available" → download → Android's install prompt. Needs the `INTERNET` permission (contacting GitHub only, sending no data) and `REQUEST_INSTALL_PACKAGES`. Every update must be signed with the same release key. The repo must be public before the first install, or the app can't read its releases. Chosen over Obtainium (a second app for the user to understand) and sending APKs by hand (kept as the emergency fallback). |
-| **Remote first install** | ⬜ | The one manual install, done remotely over a video call: the user downloads the APK from the GitHub Release; the in-app updater handles every install after it. Play Protect may block a downloaded app that asks for SMS permissions, so the walkthrough covers Samsung Auto Blocker, "Install unknown apps", and pausing Play Protect scanning (then turning it back on, and choosing "Keep" if it later flags the app). Needs a short illustrated install guide. Before release, have a tester in Kenya try a download install and one in-app update, to learn which blocks appear and whether updates hit them too. |
-| **CI: tests on every push** | ✅ `.github/workflows/tests.yml` runs the unit tests on every push and pull request | A GitHub Actions workflow running `./gradlew :app:testDebugUnitTest` on push and pull request, on GitHub's machines (no load on the dev Mac). Later it can also build the signed release APK and attach it to a GitHub Release, which is what auto-update would download. |
+| **Remote first install** | ⏳ guide written (`docs/INSTALL.md`); the install itself is left | The one manual install, done remotely over a video call: the user downloads the APK from the GitHub Release; the in-app updater handles every install after it. Play Protect may block a downloaded app that asks for SMS permissions, so the guide covers Samsung Auto Blocker, "Install unknown apps", and pausing Play Protect scanning (then turning it back on, and choosing "Keep" if it later flags the app). Optional: a tester in Kenya tries a download install and one in-app update first, to learn which blocks appear. |
+| **Startup-crash safety net** | ⬜ undecided | A release that crashes on launch can't reach the update banner, so it can't install its own fix (a real risk: the first release build did exactly this). Idea: the update notification opens a small screen that doesn't load the rest of the app. Fallback today: send the fixed APK by hand; it installs over the broken one and keeps the data. |
+| **CI: tests on every push** | ✅ `.github/workflows/tests.yml` runs the unit tests on every push and pull request | A GitHub Actions workflow running `./gradlew :app:testDebugUnitTest` on push and pull request, on GitHub's machines (no load on the dev Mac). |
+| **CI: releases from tags** | ✅ `.github/workflows/release.yml` | Pushing a tag `v<versionName>` runs the tests, builds and signs the APK, and publishes it with `version.txt` as a GitHub Release (see README, "Releasing"). |
 
 ## Later
 
