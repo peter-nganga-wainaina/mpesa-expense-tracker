@@ -34,7 +34,25 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-press on the app icon: "Check for updates", the way out of a release that crashes on start. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
+
+        <!--
+          The update safety net. Its own process starts without the main process's startup (WorkManager's
+          initializer and the rest), so a release that crashes there can still install its fix.
+          Exported for the launcher shortcut; all it can do is offer an install the user confirms.
+        -->
+        <activity
+            android:name=".update.UpdateActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:label="@string/check_for_updates"
+            android:process=":updater"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Material.Light.Dialog" />
 
         <!-- BROADCAST_SMS: only the system can deliver SMS broadcasts to this receiver. -->
         <receiver
@@ -50,12 +68,17 @@
             android:name=".notify.CategoryActionReceiver"
             android:exported="false" />
 
-        <!-- Shares the downloaded update APK with Android's installer, read-only and per request. -->
+        <!--
+          Shares the downloaded update APK with Android's installer, read-only and per request. In the
+          updater's process: the installer reading the file must not start the main process, or a
+          release that crashes on start would crash again here and never install its fix.
+        -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.updates"
             android:exported="false"
-            android:grantUriPermissions="true">
+            android:grantUriPermissions="true"
+            android:process=":updater">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/update_paths" />

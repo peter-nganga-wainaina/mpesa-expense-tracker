@@ -7,30 +7,30 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.example.expensetracker.MainActivity
 import com.example.expensetracker.R
 import com.example.expensetracker.notify.canPostNotifications
 
 /**
- * Tells the user a new version is out. Tapping it only opens the app, where the banner offers the
- * update: downloading starts from a deliberate tap, never from the background.
+ * Tells the user a new version is out. Tapping it opens [UpdateActivity] rather than the app, so it
+ * still works when a broken release can't show its screens. Downloading starts from a deliberate tap
+ * there, never from the background.
  */
 class UpdateNotification(private val context: Context) {
 
     fun show(release: ReleaseInfo) {
         if (!context.canPostNotifications()) return
         ensureChannel()
-        val openApp = PendingIntent.getActivity(
+        val openUpdater = PendingIntent.getActivity(
             context,
             NOTIFICATION_ID,
-            Intent(context, MainActivity::class.java),
+            Intent(context, UpdateActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Update available")
-            .setContentText("Version ${release.versionName} is ready to install. Open the app to update.")
-            .setContentIntent(openApp)
+            .setContentText("Version ${release.versionName} is ready to install. Tap to update.")
+            .setContentIntent(openUpdater)
             .setAutoCancel(true)
             .build()
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)

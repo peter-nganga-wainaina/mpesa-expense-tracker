@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="check_for_updates"
+        android:shortcutShortLabel="@string/check_for_updates">
+        <!-- Resource files can't use ${applicationId}, so the permanent app ID is written out here. -->
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.example.expensetracker.update.UpdateActivity"
+            android:targetPackage="io.github.peter_nganga_wainaina.expensetracker" />
+    </shortcut>
+</shortcuts>

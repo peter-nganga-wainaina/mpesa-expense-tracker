@@ -1,7 +1,6 @@
 package com.example.expensetracker
 
 import android.content.Context
-import androidx.core.content.pm.PackageInfoCompat
 import com.example.expensetracker.categorize.Categorizer
 import com.example.expensetracker.data.AppDatabase
 import com.example.expensetracker.data.RoomCategoryStore
@@ -19,6 +18,7 @@ import com.example.expensetracker.update.GitHubReleases
 import com.example.expensetracker.update.UpdateChecker
 import com.example.expensetracker.update.UpdateInstaller
 import com.example.expensetracker.update.UpdatePreferences
+import com.example.expensetracker.update.installedVersionCode
 import java.time.LocalDateTime
 
 /** Wires the app's pieces together in one place, for the receivers and the UI alike. Cheap to create. */
@@ -43,6 +43,3 @@ class AppContainer(context: Context) {
     val updateInstaller = UpdateInstaller(releases)
     val updatePreferences = UpdatePreferences(app)
 }
-
-private fun installedVersionCode(context: Context): Long =
-    PackageInfoCompat.getLongVersionCode(context.packageManager.getPackageInfo(context.packageName, 0))

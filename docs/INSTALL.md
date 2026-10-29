@@ -77,7 +77,7 @@ it belongs to.
 ## Updates
 
 When a new version is out, a bar above the tabs says **Update available**. You may also get a
-notification.
+notification; tapping it opens a small update window that works the same way.
 
 1. Tap **Update**. The download takes a few seconds.
 2. The first time only, Android asks to allow installs from Expense Tracker: tap **Settings**, turn
@@ -95,6 +95,7 @@ Everything saved in the app is kept through updates.
 | No notification after an M-Pesa payment | Check notifications are allowed for Expense Tracker, and that it's in **Never sleeping apps** |
 | A transaction is missing | Open the app: it looks back over the last 3 days of messages and adds anything missed |
 | The update won't download | Check the connection, then tap **Try again** |
+| The app closes as soon as it opens | Press and hold the app's icon, tap **Check for updates**, then **Update**. This works even when the app itself won't open |
 
 ## Privacy
 

@@ -59,6 +59,11 @@ ui/                              // uncategorized queue, category picker, settin
   asks to confirm. `INTERNET` is used for this alone, and nothing is sent. The `applicationId` and
   release key are permanent: changing either means a reinstall, which wipes the data. Bump
   `versionCode` and `versionName` for every release. The repo must be public for the app to see releases.
+  **Safety net:** `UpdateActivity` and the update `FileProvider` run in a separate `:updater` process
+  (plain views, no database or Compose), reached from the update notification and a long-press
+  "Check for updates" shortcut, so a release that crashes on start can still install its fix. Keep
+  them independent of the rest of the app, and don't add an `Application` class that does real work:
+  it would run in that process too.
 - **No always-running service.** The manifest-registered receiver is woken by Android on each SMS.
   Use `goAsync()` plus a coroutine for the DB write.
 - **Multipart SMS:** concatenate all parts from `getMessagesFromIntent` before parsing.
